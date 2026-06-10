@@ -1,0 +1,388 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1120" width="1600" height="1120" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+
+  <!-- ============== DEFS ============== -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1F2937"/>
+    </marker>
+    <marker id="arr-feedback" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7C3AED"/>
+    </marker>
+    <marker id="arr-fast" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16A34A"/>
+    </marker>
+
+    <filter id="drop" x="-10%" y="-10%" width="120%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <linearGradient id="title-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"  stop-color="#1E40AF"/>
+      <stop offset="55%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#BE185D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1600" height="1120" fill="#FAFAFA"/>
+
+  <!-- ============== TITLE ============== -->
+  <g>
+    <text x="800" y="52" text-anchor="middle" font-size="40" font-weight="800" fill="url(#title-grad)">JUROR</text>
+    <text x="800" y="80" text-anchor="middle" font-size="15" fill="#4B5563" font-weight="500">
+      A schema-pluggable, evidence-grounded agent for statistical annotation
+    </text>
+    <text x="800" y="100" text-anchor="middle" font-size="12" fill="#9CA3AF" font-style="italic">
+      one architecture · many labeling domains · verifiable annotation artifacts
+    </text>
+
+    <!-- competition tag -->
+    <g transform="translate(1400, 30)">
+      <rect x="0" y="0" width="180" height="50" rx="6" fill="#1E40AF"/>
+      <text x="90" y="22" text-anchor="middle" font-size="12" fill="#FFFFFF" font-weight="700">STAI-X 2026</text>
+      <text x="90" y="40" text-anchor="middle" font-size="11" fill="#BFDBFE">Award C · Statistical Agents</text>
+    </g>
+  </g>
+
+  <!-- ============== SCHEMA CARD (left, input) ============== -->
+  <g filter="url(#drop)">
+    <rect x="40" y="125" width="280" height="335" rx="12" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+    <rect x="40" y="125" width="280" height="38" rx="12" fill="#2563EB"/>
+    <rect x="40" y="150" width="280" height="13" fill="#2563EB"/>
+    <text x="180" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">SCHEMA  CARD  (input)</text>
+
+    <text x="58" y="186" font-size="12" font-weight="700" fill="#1E3A8A">defines the task abstractly:</text>
+    <g font-size="12.5" fill="#1F2937">
+      <text x="62" y="208">▸  task_name</text>
+      <text x="62" y="228">▸  labels[ ]  + definitions</text>
+      <text x="62" y="248">▸  boundary &amp; counter-examples</text>
+      <text x="62" y="268">▸  rhetorical priors</text>
+      <text x="62" y="288">▸  allowed tool registry</text>
+      <text x="62" y="308">▸  abstain threshold</text>
+      <text x="62" y="328">▸  compute budget</text>
+    </g>
+
+    <line x1="58" y1="346" x2="302" y2="346" stroke="#93C5FD" stroke-width="1"/>
+    <text x="58" y="365" font-size="11" font-weight="700" fill="#1E3A8A">PLUG-IN SCHEMAS</text>
+    <g font-size="11">
+      <rect x="58" y="375" width="135" height="22" rx="11" fill="#2563EB"/>
+      <text x="125" y="390" text-anchor="middle" fill="#FFFFFF" font-weight="600">citation_intent ✓</text>
+
+      <rect x="200" y="375" width="100" height="22" rx="11" fill="#E0E7FF" stroke="#A5B4FC"/>
+      <text x="250" y="390" text-anchor="middle" fill="#3730A3">news_stance</text>
+
+      <rect x="58" y="403" width="170" height="22" rx="11" fill="#E0E7FF" stroke="#A5B4FC"/>
+      <text x="143" y="418" text-anchor="middle" fill="#3730A3">overdose_ed_signal</text>
+
+      <rect x="235" y="403" width="65" height="22" rx="11" fill="#E0E7FF" stroke="#A5B4FC"/>
+      <text x="267" y="418" text-anchor="middle" fill="#3730A3">sentiment</text>
+
+      <rect x="58" y="431" width="120" height="22" rx="11" fill="#E0E7FF" stroke="#A5B4FC"/>
+      <text x="118" y="446" text-anchor="middle" fill="#3730A3">legal_clause_type</text>
+    </g>
+  </g>
+
+  <!-- ============== MEMORY (left, below schema) ============== -->
+  <g filter="url(#drop)">
+    <rect x="40" y="490" width="280" height="395" rx="12" fill="#F3F4F6" stroke="#4B5563" stroke-width="2"/>
+    <rect x="40" y="490" width="280" height="38" rx="12" fill="#4B5563"/>
+    <rect x="40" y="515" width="280" height="13" fill="#4B5563"/>
+    <text x="180" y="515" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">CASE  LIBRARY  (memory)</text>
+
+    <text x="58" y="552" font-size="12" font-weight="700" fill="#1F2937">episodic + distilled knowledge</text>
+
+    <g font-size="12" fill="#374151">
+      <text x="62" y="576">●  stores every hard verdict +</text>
+      <text x="78" y="592">    full case file</text>
+      <text x="62" y="616">●  retrieved as dynamic few-shot</text>
+      <text x="78" y="632">    for similar new instances</text>
+      <text x="62" y="656">●  Precedent Extractor distills</text>
+      <text x="78" y="672">    clusters into compact rules</text>
+      <text x="62" y="696">●  closes the loop → Investigator</text>
+      <text x="78" y="712">    &amp; Prosecution Panel</text>
+    </g>
+
+    <line x1="58" y1="732" x2="302" y2="732" stroke="#D1D5DB" stroke-width="1"/>
+    <text x="58" y="752" font-size="11" font-weight="700" fill="#1F2937">SAMPLE PRECEDENT</text>
+    <rect x="58" y="760" width="244" height="110" rx="6" fill="#FFFFFF" stroke="#D1D5DB"/>
+    <g font-size="10.5" fill="#374151" font-family="'Courier New', monospace">
+      <text x="66" y="778">IF section = "Methods"</text>
+      <text x="66" y="794">AND verb ∈ {follow, adopt,</text>
+      <text x="66" y="810">              build on}</text>
+      <text x="66" y="826">THEN label = Technical basis</text>
+      <text x="66" y="842">     prior = 0.85</text>
+      <text x="66" y="861">[learned from 142 cases]</text>
+    </g>
+  </g>
+
+  <!-- ============== PIPELINE (center) ============== -->
+  <!-- vertical column at x=360–1100, w=740 -->
+
+  <!-- ① TRIAGE OFFICER -->
+  <g filter="url(#drop)">
+    <rect x="370" y="130" width="720" height="84" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+    <rect x="370" y="130" width="720" height="28" rx="8" fill="#16A34A"/>
+    <rect x="370" y="145" width="720" height="13" fill="#16A34A"/>
+    <text x="386" y="150" font-size="14" font-weight="700" fill="#FFFFFF">①  TRIAGE OFFICER</text>
+    <text x="1078" y="150" text-anchor="end" font-size="11" fill="#DCFCE7" font-style="italic">TF-IDF + LR classifier  ·  zero LLM tokens</text>
+
+    <text x="386" y="180" font-size="12.5" fill="#14532D">reuses our trained <tspan font-weight="700">ML baselines</tspan> as a gate:  difficulty = 1 − max_class_prob,  plausible labels = top-k by prob</text>
+    <text x="386" y="200" font-size="12" fill="#166534">high-prob → fast track    ·    low-prob / ambiguous → full jury    ·    shortlists labels to halve downstream LLM cost</text>
+  </g>
+
+  <!-- arrow 1→2 -->
+  <line x1="730" y1="216" x2="730" y2="232" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ② INVESTIGATOR -->
+  <g filter="url(#drop)">
+    <rect x="370" y="234" width="720" height="118" rx="8" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
+    <rect x="370" y="234" width="720" height="28" rx="8" fill="#EA580C"/>
+    <rect x="370" y="249" width="720" height="13" fill="#EA580C"/>
+    <text x="386" y="254" font-size="14" font-weight="700" fill="#FFFFFF">②  INVESTIGATOR  (autonomous tool-use agent)</text>
+    <text x="1078" y="254" text-anchor="end" font-size="11" fill="#FFEDD5" font-style="italic">regex + ML + graph tools  ·  LLM only at the gate</text>
+
+    <text x="386" y="284" font-size="12.5" fill="#7C2D12">picks tools by a learned policy; favours <tspan font-weight="700">non-LLM</tspan> tools first (regex, embeddings, co-citation graph, ML classifiers)</text>
+    <text x="386" y="304" font-size="12" fill="#9A3412">↳ assembles a structured  <tspan font-weight="700">case file</tspan>:  rhetorical markers, section provenance, topic-sim score,</text>
+    <text x="386" y="320" font-size="12" fill="#9A3412">    co-citation graph features, similar precedents from Case Library, ...</text>
+    <text x="386" y="340" font-size="11" fill="#C2410C" font-style="italic">stop criterion: a small LLM gate says "evidence sufficient" — typically 0 or 1 LLM call</text>
+  </g>
+
+  <!-- arrow 2→3 -->
+  <line x1="730" y1="354" x2="730" y2="370" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ③ PROSECUTION PANEL -->
+  <g filter="url(#drop)">
+    <rect x="370" y="372" width="720" height="138" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+    <rect x="370" y="372" width="720" height="28" rx="8" fill="#DC2626"/>
+    <rect x="370" y="387" width="720" height="13" fill="#DC2626"/>
+    <text x="386" y="392" font-size="14" font-weight="700" fill="#FFFFFF">③  PROSECUTION PANEL  (one advocate per shortlisted label)</text>
+    <text x="1078" y="392" text-anchor="end" font-size="11" fill="#FEE2E2" font-style="italic">LLM  ·  primed with non-LLM evidence</text>
+
+    <!-- three advocate chips -->
+    <g>
+      <rect x="390" y="416" width="215" height="80" rx="6" fill="#FFFFFF" stroke="#DC2626"/>
+      <text x="498" y="434" text-anchor="middle" font-size="12" font-weight="700" fill="#991B1B">Advocate A</text>
+      <text x="498" y="450" text-anchor="middle" font-size="11" fill="#7F1D1D">"this is Background"</text>
+      <text x="402" y="470" font-size="10.5" fill="#374151">argument:  framing language,</text>
+      <text x="402" y="484" font-size="10.5" fill="#374151">no method-adoption verb</text>
+    </g>
+    <g>
+      <rect x="615" y="416" width="215" height="80" rx="6" fill="#FFFFFF" stroke="#DC2626"/>
+      <text x="722" y="434" text-anchor="middle" font-size="12" font-weight="700" fill="#991B1B">Advocate B</text>
+      <text x="722" y="450" text-anchor="middle" font-size="11" fill="#7F1D1D">"this is Technical basis"</text>
+      <text x="627" y="470" font-size="10.5" fill="#374151">argument:  co-cited in §Methods,</text>
+      <text x="627" y="484" font-size="10.5" fill="#374151">verb "we follow"</text>
+    </g>
+    <g>
+      <rect x="840" y="416" width="230" height="80" rx="6" fill="#FFFFFF" stroke="#DC2626"/>
+      <text x="955" y="434" text-anchor="middle" font-size="12" font-weight="700" fill="#991B1B">Advocate C</text>
+      <text x="955" y="450" text-anchor="middle" font-size="11" fill="#7F1D1D">"this is Comparison"</text>
+      <text x="852" y="470" font-size="10.5" fill="#374151">argument:  topic overlap, but</text>
+      <text x="852" y="484" font-size="10.5" fill="#374151">no comparative verb found ✗</text>
+    </g>
+  </g>
+
+  <!-- arrow 3→4 -->
+  <line x1="730" y1="512" x2="730" y2="528" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ④ CROSS-EXAMINER -->
+  <g filter="url(#drop)">
+    <rect x="370" y="530" width="720" height="86" rx="8" fill="#FCE7F3" stroke="#BE185D" stroke-width="2"/>
+    <rect x="370" y="530" width="720" height="28" rx="8" fill="#BE185D"/>
+    <rect x="370" y="545" width="720" height="13" fill="#BE185D"/>
+    <text x="386" y="550" font-size="14" font-weight="700" fill="#FFFFFF">④  CROSS-EXAMINER  (adversarial role)</text>
+    <text x="1078" y="550" text-anchor="end" font-size="11" fill="#FCE7F3" font-style="italic">LLM critic  +  rule-based contradiction filter</text>
+
+    <text x="386" y="582" font-size="12.5" fill="#831843">attacks each advocate; a regex contradiction-pattern matcher pre-flags obvious holes before invoking the LLM critic</text>
+    <text x="386" y="602" font-size="11" fill="#9D174D" font-style="italic">replaces blind multi-turn / CoT (which our experiments show often degrade accuracy)</text>
+  </g>
+
+  <!-- arrow 4→5 -->
+  <line x1="730" y1="618" x2="730" y2="634" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ⑤ FACT-CHECKER -->
+  <g filter="url(#drop)">
+    <rect x="370" y="636" width="720" height="86" rx="8" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+    <rect x="370" y="636" width="720" height="28" rx="8" fill="#7C3AED"/>
+    <rect x="370" y="651" width="720" height="13" fill="#7C3AED"/>
+    <text x="386" y="656" font-size="14" font-weight="700" fill="#FFFFFF">⑤  FACT-CHECKER  (NLI + exact-match  ·  zero LLM tokens)</text>
+    <text x="1078" y="656" text-anchor="end" font-size="11" fill="#EDE9FE" font-style="italic">neuro-symbolic anchor</text>
+
+    <text x="386" y="688" font-size="12.5" fill="#4C1D95">exact-string match → BLEU overlap → DeBERTa-NLI entailment, in that cheap-to-expensive order</text>
+    <text x="386" y="708" font-size="11" fill="#6D28D9" font-style="italic">hallucinated evidence dropped; LLMs deliberately forbidden — they cannot vouch for themselves</text>
+  </g>
+
+  <!-- arrow 5→6 -->
+  <line x1="730" y1="724" x2="730" y2="740" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ⑥ JUDGE -->
+  <g filter="url(#drop)">
+    <rect x="370" y="742" width="720" height="92" rx="8" fill="#CCFBF1" stroke="#0F766E" stroke-width="2"/>
+    <rect x="370" y="742" width="720" height="28" rx="8" fill="#0F766E"/>
+    <rect x="370" y="757" width="720" height="13" fill="#0F766E"/>
+    <text x="386" y="762" font-size="14" font-weight="700" fill="#FFFFFF">⑥  JUDGE  (cross-model arbitrator + statistical calibrator)</text>
+    <text x="1078" y="762" text-anchor="end" font-size="11" fill="#CCFBF1" font-style="italic">LLM ×1–2  +  Platt/temperature scaling</text>
+
+    <text x="386" y="794" font-size="12.5" fill="#134E4A">LLM weighs surviving arguments; non-LLM <tspan font-weight="700">Platt scaler</tspan> turns the raw margin into calibrated probability</text>
+    <text x="386" y="814" font-size="12" fill="#115E59">tight margin → 2nd LLM family ·  emits  <tspan font-weight="700">{ label, confidence, margin }</tspan>  ·  invokes  <tspan font-weight="700">abstain()</tspan>  if low</text>
+  </g>
+
+  <!-- arrow 6→7 -->
+  <line x1="730" y1="836" x2="730" y2="852" stroke="#1F2937" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- ⑦ CLERK -->
+  <g filter="url(#drop)">
+    <rect x="370" y="854" width="720" height="44" rx="8" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2"/>
+    <rect x="370" y="854" width="720" height="28" rx="8" fill="#CA8A04"/>
+    <rect x="370" y="869" width="720" height="13" fill="#CA8A04"/>
+    <text x="386" y="874" font-size="14" font-weight="700" fill="#FFFFFF">⑦  CLERK  (pure code  ·  no LLM)  →  produces the Annotation Artifact (see below)</text>
+  </g>
+
+  <!-- fast-track arrow: Triage → straight down to Clerk (along right side of pipeline) -->
+  <path d="M 1090 172 Q 1150 172 1150 440 Q 1150 876 1090 876"
+        fill="none" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arr-fast)"/>
+
+  <!-- compute-savings callout sitting on the fast-track arrow -->
+  <g filter="url(#drop)">
+    <rect x="1110" y="465" width="120" height="120" rx="8" fill="#ECFDF5" stroke="#16A34A" stroke-width="1.5"/>
+    <rect x="1110" y="465" width="120" height="22" rx="8" fill="#16A34A"/>
+    <rect x="1110" y="478" width="120" height="9" fill="#16A34A"/>
+    <text x="1170" y="481" text-anchor="middle" font-size="10.5" font-weight="700" fill="#FFFFFF">FAST TRACK</text>
+    <text x="1170" y="506" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">~65%</text>
+    <text x="1170" y="522" text-anchor="middle" font-size="9" fill="#065F46">of instances</text>
+    <text x="1170" y="535" text-anchor="middle" font-size="9" fill="#065F46">resolved by</text>
+    <text x="1170" y="548" text-anchor="middle" font-size="9" fill="#065F46">ML + rules</text>
+    <text x="1170" y="561" text-anchor="middle" font-size="9" fill="#065F46">alone — zero</text>
+    <text x="1170" y="574" text-anchor="middle" font-size="9" fill="#065F46">LLM tokens</text>
+  </g>
+
+  <!-- ============== TOOL KIT (right) ============== -->
+  <g filter="url(#drop)">
+    <rect x="1240" y="125" width="320" height="760" rx="12" fill="#F9FAFB" stroke="#374151" stroke-width="2"/>
+    <rect x="1240" y="125" width="320" height="38" rx="12" fill="#374151"/>
+    <rect x="1240" y="150" width="320" height="13" fill="#374151"/>
+    <text x="1400" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">INVESTIGATOR'S  TOOLKIT</text>
+
+    <!-- ░░░ NON-LLM banner ░░░ -->
+    <rect x="1252" y="174" width="296" height="22" rx="4" fill="#065F46"/>
+    <text x="1400" y="190" text-anchor="middle" font-size="11" font-weight="700" fill="#D1FAE5">NON-LLM ENGINES  ·  fast · cheap · deterministic</text>
+
+    <!-- Statistical / ML -->
+    <text x="1258" y="212" font-size="11" font-weight="700" fill="#065F46">📊  STATISTICAL  / ML</text>
+    <g font-size="11" fill="#1F2937" font-family="'Menlo','Courier New', monospace">
+      <text x="1262" y="230">▸ tfidf_lr_classifier  <tspan fill="#9CA3AF" font-style="italic">[trained on 340K]</tspan></text>
+      <text x="1262" y="247">▸ word2vec_topic_sim</text>
+      <text x="1262" y="264">▸ section_classifier</text>
+      <text x="1262" y="281">▸ platt_calibrator</text>
+    </g>
+
+    <!-- Pattern / Rule -->
+    <text x="1258" y="304" font-size="11" font-weight="700" fill="#065F46">📏  PATTERN  / RULE</text>
+    <g font-size="11" fill="#1F2937" font-family="'Menlo','Courier New', monospace">
+      <text x="1262" y="322">▸ rhetorical_marker_regex</text>
+      <text x="1262" y="339">▸ verb_dependency_parse  <tspan fill="#9CA3AF" font-style="italic">spaCy</tspan></text>
+      <text x="1262" y="356">▸ citation_span_locator</text>
+      <text x="1262" y="373">▸ contradiction_pattern</text>
+    </g>
+
+    <!-- Graph / Symbolic -->
+    <text x="1258" y="396" font-size="11" font-weight="700" fill="#065F46">🔣  GRAPH  / SYMBOLIC</text>
+    <g font-size="11" fill="#1F2937" font-family="'Menlo','Courier New', monospace">
+      <text x="1262" y="414">▸ co_citation_graph</text>
+      <text x="1262" y="431">▸ bibliographic_distance</text>
+      <text x="1262" y="448">▸ entity_linker</text>
+    </g>
+
+    <!-- Verification -->
+    <text x="1258" y="471" font-size="11" font-weight="700" fill="#065F46">🔬  VERIFICATION  <tspan font-style="italic" fill="#6B7280">(LLM forbidden)</tspan></text>
+    <g font-size="11" fill="#1F2937" font-family="'Menlo','Courier New', monospace">
+      <text x="1262" y="489">▸ exact_span_match</text>
+      <text x="1262" y="506">▸ bleu_overlap</text>
+      <text x="1262" y="523">▸ deberta_nli_verifier</text>
+    </g>
+
+    <!-- ░░░ LLM banner ░░░ -->
+    <rect x="1252" y="540" width="296" height="22" rx="4" fill="#7C3AED"/>
+    <text x="1400" y="556" text-anchor="middle" font-size="11" font-weight="700" fill="#EDE9FE">LLM ENGINES  ·  invoked only when above is unsure</text>
+
+    <g font-size="11" fill="#1F2937" font-family="'Menlo','Courier New', monospace">
+      <text x="1262" y="580">▸ llm_advocate          <tspan fill="#9CA3AF" font-style="italic">stage ③</tspan></text>
+      <text x="1262" y="597">▸ llm_critic            <tspan fill="#9CA3AF" font-style="italic">stage ④</tspan></text>
+      <text x="1262" y="614">▸ llm_arbitrator        <tspan fill="#9CA3AF" font-style="italic">stage ⑥</tspan></text>
+      <text x="1262" y="631">▸ cross_model_query     <tspan fill="#9CA3AF" font-style="italic">tie-break</tspan></text>
+      <text x="1262" y="648">▸ evidence_sufficient?  <tspan fill="#9CA3AF" font-style="italic">small LM gate</tspan></text>
+    </g>
+
+    <!-- Domain tools (compact) -->
+    <line x1="1258" y1="666" x2="1542" y2="666" stroke="#D1D5DB" stroke-width="1"/>
+    <text x="1258" y="685" font-size="11" font-weight="700" fill="#1F2937">DOMAIN-SPECIFIC  (swap via Schema Card)</text>
+
+    <text x="1262" y="704" font-size="10.5" font-weight="700" fill="#DC2626">citation_intent  ✓ active</text>
+    <text x="1262" y="720" font-size="10" fill="#7F1D1D" font-family="'Menlo','Courier New', monospace">retrieve_paper_section · co_citation_lookup ·</text>
+    <text x="1262" y="734" font-size="10" fill="#7F1D1D" font-family="'Menlo','Courier New', monospace">cited_work_abstract · bibliographic_distance</text>
+
+    <text x="1262" y="754" font-size="10.5" font-weight="700" fill="#9CA3AF">news_stance  (alt)</text>
+    <text x="1262" y="770" font-size="10" fill="#9CA3AF" font-family="'Menlo','Courier New', monospace">source_credibility · claim_extractor ·</text>
+    <text x="1262" y="784" font-size="10" fill="#9CA3AF" font-family="'Menlo','Courier New', monospace">factcheck_db_lookup · speaker_resolver</text>
+
+    <text x="1262" y="804" font-size="10.5" font-weight="700" fill="#9CA3AF">overdose_ed_signal  (alt · STAI-X)</text>
+    <text x="1262" y="820" font-size="10" fill="#9CA3AF" font-family="'Menlo','Courier New', monospace">icd_code_lookup · symptom_phrase_match ·</text>
+    <text x="1262" y="834" font-size="10" fill="#9CA3AF" font-family="'Menlo','Courier New', monospace">regional_baseline · temporal_signal_window</text>
+
+    <line x1="1258" y1="850" x2="1542" y2="850" stroke="#D1D5DB" stroke-width="1"/>
+    <text x="1258" y="868" font-size="10.5" fill="#4B5563" font-style="italic">domain tools declared in Schema Card —</text>
+    <text x="1258" y="881" font-size="10.5" fill="#4B5563" font-style="italic">agent is domain-agnostic by construction.</text>
+  </g>
+
+  <!-- ============== FEEDBACK ARROWS ============== -->
+  <!-- Memory → Investigator (curved feedback) -->
+  <path d="M 320 600 Q 345 600 345 320 Q 345 290 370 290"
+        fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-feedback)"/>
+  <text x="170" y="478" font-size="10.5" fill="#7C3AED" font-weight="600" font-style="italic">feedback (precedents)</text>
+
+  <!-- Memory → Panel (second feedback line) -->
+  <path d="M 320 680 Q 355 680 355 440 Q 355 420 370 420"
+        fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-feedback)"/>
+
+  <!-- ============== ANNOTATION ARTIFACT (bottom) ============== -->
+  <g filter="url(#drop)">
+    <rect x="40" y="920" width="1520" height="170" rx="12" fill="#FFFBEB" stroke="#CA8A04" stroke-width="2"/>
+    <rect x="40" y="920" width="1520" height="32" rx="12" fill="#CA8A04"/>
+    <rect x="40" y="940" width="1520" height="13" fill="#CA8A04"/>
+    <text x="58" y="942" font-size="14" font-weight="700" fill="#FFFFFF">ANNOTATION  ARTIFACT  (output)  —  this is what JUROR ships, not just a label</text>
+    <text x="1542" y="942" text-anchor="end" font-size="11" fill="#FEF3C7" font-style="italic">verifiable · auditable · replayable</text>
+
+    <!-- left: JSON sample -->
+    <g font-family="'Menlo','Courier New', monospace" font-size="11" fill="#1F2937">
+      <text x="58" y="976">{</text>
+      <text x="74" y="992">"instance_id": "ID_183878",</text>
+      <text x="74" y="1006">"label": "Background",   "confidence": 0.78,   "abstain": false,</text>
+      <text x="74" y="1020">"evidence": [</text>
+      <text x="90" y="1034">{ "span": "Bickel and Rosenblatt (1973) ...",  "role": "context_reference",  "verified": ✓ },</text>
+      <text x="90" y="1048">{ "span": "This approach to constructing ...", "role": "framing_language",   "verified": ✓ }  ],</text>
+      <text x="74" y="1062">"rejected_alts": [ { "Technical basis": "no adoption verbs found" },</text>
+      <text x="74" y="1076">                  { "Comparison":      "no comparative verb found" } ],</text>
+    </g>
+
+    <!-- divider -->
+    <line x1="1010" y1="965" x2="1010" y2="1080" stroke="#FDE68A" stroke-width="1.5"/>
+
+    <!-- right: what makes this special -->
+    <g font-size="12" fill="#78350F">
+      <text x="1028" y="976" font-weight="700">Why ship an artifact, not a label?</text>
+      <text x="1028" y="998">● <tspan fill="#1F2937">every label has a tool-trace and verified spans</tspan></text>
+      <text x="1028" y="1018">● <tspan fill="#1F2937">rejected alternatives are explained, not silent</tspan></text>
+      <text x="1028" y="1038">● <tspan fill="#1F2937">low-confidence cases self-flag for human review</tspan></text>
+      <text x="1028" y="1058">● <tspan fill="#1F2937">artifacts feed Case Library → agent improves online</tspan></text>
+      <text x="1028" y="1078">● <tspan fill="#1F2937">replayable: same artifact reproduces same decision</tspan></text>
+    </g>
+  </g>
+
+  <!-- Annotation → Memory (feedback up to memory) -->
+  <path d="M 200 920 Q 200 895 200 885"
+        fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-feedback)"/>
+
+</svg>

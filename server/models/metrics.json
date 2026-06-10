@@ -1,0 +1,45 @@
+{
+  "trained_on": "Citations.csv",
+  "n_train": 271940,
+  "n_test": 67986,
+  "max_features": 10000,
+  "accuracy": 0.6932,
+  "macro_f1": 0.5952,
+  "weighted_f1": 0.7168,
+  "per_class": [
+    {
+      "label": "Background",
+      "precision": 0.881,
+      "recall": 0.6824,
+      "f1": 0.7691,
+      "support": 36375
+    },
+    {
+      "label": "Comparison",
+      "precision": 0.4583,
+      "recall": 0.73,
+      "f1": 0.5631,
+      "support": 6656
+    },
+    {
+      "label": "Fundamental idea",
+      "precision": 0.2151,
+      "recall": 0.6276,
+      "f1": 0.3204,
+      "support": 2849
+    },
+    {
+      "label": "Technical basis",
+      "precision": 0.7493,
+      "recall": 0.7084,
+      "f1": 0.7283,
+      "support": 22106
+    }
+  ],
+  "label_order": [
+    "Background",
+    "Comparison",
+    "Fundamental idea",
+    "Technical basis"
+  ]
+}

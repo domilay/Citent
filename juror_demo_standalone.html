@@ -1,0 +1,2629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUROR — Schema-Pluggable Annotation Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   JUROR · Workflow Demo · v3 premium aesthetic
+   Glassmorphism, aurora gradients, Inter type, premium accents.
+   ═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Surfaces — slightly lifted so glass cards read better */
+  --bg-deep:    #0A0F1F;
+  --bg-mid:     #11172B;
+  --bg-elev:    #161E36;
+
+  /* Glass — more present, stronger borders for legibility */
+  --glass-fill:    rgba(255, 255, 255, 0.045);
+  --glass-fill-2:  rgba(255, 255, 255, 0.070);
+  --glass-border:  rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.22);
+  --glass-blur:    saturate(160%) blur(20px);
+
+  /* Type — brighter scale; passes WCAG AA on the new background */
+  --text:       #F1F5F9;   /* slate-100 — body */
+  --text-dim:   #CBD5E1;   /* slate-300 — captions & speech */
+  --text-faint: #94A3B8;   /* slate-400 — labels */
+  --text-soft:  #64748B;   /* slate-500 — micro hints only */
+
+  /* Role accents */
+  --c-triage:        #34D399;
+  --c-investigator:  #FB923C;
+  --c-advocate:      #F87171;
+  --c-examiner:      #F472B6;
+  --c-factchecker:   #A78BFA;
+  --c-judge:         #5EEAD4;
+  --c-clerk:         #FCD34D;
+  --c-llm:           #C084FC;
+
+  /* Brand */
+  --accent-1: #A78BFA;
+  --accent-2: #22D3EE;
+  --accent-3: #F472B6;
+  --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+
+  --radius:  14px;
+  --radius-lg: 20px;
+
+  --shadow-soft: 0 1px 0 0 rgba(255,255,255,0.05) inset, 0 8px 32px -4px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 0 1px rgba(255,255,255,0.08), 0 12px 40px -6px rgba(167,139,250,0.18);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.55;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ─── AURORA BACKGROUND ─── */
+.aurora {
+  position: fixed; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(167,139,250,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(34,211,238,0.08) 0%, transparent 50%),
+    var(--bg-deep);
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.22;       /* dialled down so text never fights with the blobs */
+  mix-blend-mode: screen;
+}
+.blob-1 { width: 600px; height: 600px; left: -10%;  top: 10%;     background: #7C3AED; animation: blob1 24s infinite ease-in-out; }
+.blob-2 { width: 500px; height: 500px; right: -8%;  top: 30%;     background: #0891B2; animation: blob2 28s infinite ease-in-out; }
+.blob-3 { width: 700px; height: 700px; left: 30%;   bottom: -20%; background: #DB2777; opacity: 0.12; animation: blob3 32s infinite ease-in-out; }
+
+@keyframes blob1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(80px,40px); } }
+@keyframes blob2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-60px,80px); } }
+@keyframes blob3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,-60px); } }
+
+/* ─── LAYOUT ─── */
+#app {
+  position: relative; z-index: 1;
+  width: min(1760px, 96vw);
+  margin: 0 auto;
+  padding: 20px 28px 26px;
+  display: flex; flex-direction: column;
+  gap: 16px;
+}
+
+.glass {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOP NAV
+   ═══════════════════════════════════════════════════════════════ */
+.topnav {
+  display: flex; align-items: center; gap: 28px;
+  padding: 14px 0 10px;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.logo-mark {
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--glass-fill-2);
+  border: 1px solid var(--glass-border);
+}
+.logo-mark svg { width: 36px; height: 36px; }
+.brand-text { display: flex; flex-direction: column; gap: 3px; }
+.brand-name {
+  font-size: 22px; font-weight: 700;
+  background: var(--accent-grad);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.06em;
+}
+.brand-tag {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.mode-switch {
+  display: inline-flex;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 4px;
+  backdrop-filter: var(--glass-blur);
+}
+.mode-opt {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 9px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), background 0.3s var(--ease);
+}
+.mode-opt.active {
+  color: var(--text);
+  background: var(--glass-fill-2);
+  box-shadow: inset 0 0 0 1px var(--glass-border-strong);
+}
+.mode-opt:hover:not(.active) { color: var(--text); }
+.mode-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.demo-dot { background: var(--text-dim); color: var(--text-dim); }
+.live-dot { background: #34D399;        color: #34D399; }
+
+.nav-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.nav-btn:hover {
+  border-color: var(--glass-border-strong);
+  background: var(--glass-fill-2);
+}
+
+.award-chip {
+  background: linear-gradient(135deg, rgba(167,139,250,0.20), rgba(34,211,238,0.14));
+  border: 1px solid rgba(167,139,250,0.40);
+  color: #F3E8FF;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   API KEY DRAWER
+   ═══════════════════════════════════════════════════════════════ */
+.api-drawer {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.4s var(--ease);
+}
+.api-drawer.open { max-height: 280px; }
+.api-drawer-inner {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-top: 4px;
+}
+.api-row {
+  display: grid;
+  grid-template-columns: 1.5fr 2fr 1.2fr auto;
+  gap: 14px;
+  align-items: end;
+}
+.api-col { display: flex; flex-direction: column; gap: 7px; }
+.api-col.grow { min-width: 0; }
+.api-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.api-label .hint {
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+  color: var(--text-faint); font-size: 12px; margin-left: 8px;
+}
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.prov-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px; font-weight: 500;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.prov-btn:hover { color: var(--text); border-color: var(--glass-border-strong); }
+.prov-btn.active {
+  color: var(--text);
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.45);
+  box-shadow: 0 0 16px -2px rgba(167,139,250,0.35);
+}
+.prov-logo { color: var(--accent-1); font-size: 10px; }
+.api-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+  width: 100%;
+}
+.api-input:focus {
+  border-color: rgba(167,139,250,0.5);
+  background: rgba(167,139,250,0.05);
+}
+.primary-btn {
+  background: var(--accent-grad);
+  border: 0;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s var(--ease), transform 0.15s var(--ease);
+  white-space: nowrap;
+}
+.primary-btn:hover  { filter: brightness(1.15); }
+.primary-btn:active { transform: translateY(1px); }
+.api-status {
+  margin-top: 16px;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 9px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--text);
+}
+.status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.status-dot.pending { background: #94A3B8; color: #94A3B8; }
+.status-dot.ok      { background: #4ADE80; color: #4ADE80; }
+.status-dot.error   { background: #FB7185; color: #FB7185; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CASE BAR
+   ═══════════════════════════════════════════════════════════════ */
+.casebar { display: flex; gap: 22px; padding: 20px 26px; }
+.case-info { flex: 1; min-width: 0; }
+.case-meta { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; margin-bottom: 11px; }
+.lbl {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.lbl.small { font-size: 11.5px; }
+.val {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  color: var(--text);
+}
+.val.ref { color: #FDE047; }
+.val.gt  { color: #4ADE80; font-weight: 600; }
+.case-paragraph {
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.65;
+  font-style: italic;
+}
+.case-selector { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.case-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  width: 56px; height: 36px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.case-btn:hover  { color: var(--text); border-color: var(--glass-border-strong); }
+.case-btn.active {
+  color: var(--text);
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.45);
+  box-shadow: 0 0 12px -2px rgba(167,139,250,0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WORKFLOW STRIP
+   ═══════════════════════════════════════════════════════════════ */
+.workflow {
+  display: flex; align-items: stretch; gap: 10px;
+  padding: 22px 18px;
+  overflow-x: auto;
+}
+.workflow::-webkit-scrollbar { height: 7px; }
+.workflow::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 999px; }
+
+.station {
+  position: relative;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 16px 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid var(--glass-border);
+  min-width: 188px;
+  max-width: 220px;
+  flex: 1 1 0;
+  opacity: 0.55;
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease),
+              box-shadow 0.35s var(--ease), background 0.35s var(--ease),
+              border-color 0.35s var(--ease);
+}
+.station.dim    { opacity: 0.40; }
+.station.active {
+  opacity: 1;
+  background: rgba(255,255,255,0.038);
+  border-color: currentColor;
+  box-shadow: 0 0 0 1px currentColor, 0 0 32px -6px currentColor,
+              inset 0 1px 0 rgba(255,255,255,0.06);
+  transform: translateY(-2px);
+  z-index: 4;
+}
+.station::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: currentColor;
+  border-radius: 12px 12px 0 0;
+  opacity: 0.85;
+}
+
+.station.triage         { color: var(--c-triage); }
+.station.investigator   { color: var(--c-investigator); }
+.station.examiner       { color: var(--c-examiner); }
+.station.factchecker    { color: var(--c-factchecker); }
+.station.judge          { color: var(--c-judge); }
+.station.clerk          { color: var(--c-clerk); }
+
+.step-no {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+.actor-icon { font-size: 26px; line-height: 1; margin: 2px 0 4px; }
+.actor-name { color: var(--text); font-weight: 600; font-size: 14.5px; }
+.actor-engine {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+  display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center;
+}
+.actor-cap { font-size: 12.5px; color: var(--text-dim); line-height: 1.45; margin-top: 4px; }
+
+.badge-no-llm, .badge-llm {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.badge-no-llm { background: rgba(52,211,153,0.20);  color: #86EFAC; }
+.badge-llm    { background: rgba(192,132,252,0.28); color: #F3E8FF; }
+
+.say {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  font-style: italic;
+  min-height: 32px;
+  border-left: 2px solid currentColor;
+  padding-left: 11px;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.say.show { opacity: 1; transform: translateY(0); }
+
+.flow-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  color: rgba(255,255,255,0.18);
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
+  transition: color 0.3s var(--ease), text-shadow 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.flow-arrow.lit  { color: rgba(167,139,250,0.6); }
+.flow-arrow.next {
+  color: var(--accent-1);
+  text-shadow: 0 0 16px var(--accent-1);
+  transform: scale(1.15);
+}
+
+/* ─── PROSECUTION PANEL ─── */
+.panel-station {
+  position: relative;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 18px;
+  background: rgba(248,113,113,0.04);
+  border: 1px solid rgba(248,113,113,0.24);
+  border-radius: 14px;
+  min-width: 480px;
+  flex: 2;
+  opacity: 0.55;
+  transition: opacity 0.35s var(--ease), background 0.35s var(--ease),
+              border-color 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+.panel-station.active {
+  opacity: 1;
+  background: rgba(248,113,113,0.07);
+  border-color: rgba(248,113,113,0.50);
+  box-shadow: 0 0 0 1px rgba(248,113,113,0.35), 0 0 36px -8px rgba(248,113,113,0.35);
+}
+.panel-title {
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #FCA5A5; margin-top: 2px;
+}
+.panel-sub {
+  font-size: 12.5px; color: var(--text-dim);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+
+.intent-lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.advocate {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(248,113,113,0.26);
+  border-radius: 10px;
+  padding: 12px 14px;
+  opacity: 0.72;
+  transition: all 0.3s var(--ease);
+}
+.advocate.dim    { opacity: 0.40; }
+.advocate.active {
+  opacity: 1;
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(248,113,113,0.60);
+  box-shadow: 0 0 0 1px rgba(248,113,113,0.4), 0 0 22px -3px rgba(248,113,113,0.35);
+}
+.advocate.winner {
+  opacity: 1;
+  background: rgba(252,211,77,0.10);
+  border-color: rgba(252,211,77,0.55);
+  box-shadow: 0 0 0 1px rgba(252,211,77,0.6), 0 0 32px -4px rgba(252,211,77,0.45);
+}
+.intent-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.intent-def  { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.adv-arg {
+  font-size: 12.5px; line-height: 1.45;
+  color: var(--text);
+  margin-top: 9px;
+  font-style: italic;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  min-height: 14px;
+}
+.adv-arg.show { opacity: 1; transform: translateY(0); }
+.adv-strength {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.25s var(--ease);
+}
+.adv-strength.show { opacity: 1; }
+
+.strike-overlay {
+  position: absolute; inset: 0;
+  border-radius: 10px; pointer-events: none;
+  background:
+    linear-gradient(135deg, transparent 47%, rgba(248,113,113,0.85) 49%, rgba(248,113,113,0.85) 51%, transparent 53%),
+    rgba(248,113,113,0.08);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+}
+.strike-overlay.show { opacity: 0.85; }
+
+/* ═══════════════════════════════════════════════════════════════
+   STAMP
+   ═══════════════════════════════════════════════════════════════ */
+.stamp {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; font-weight: 800;
+  padding: 5px 11px;
+  border: 1.8px solid;
+  border-radius: 4px;
+  transform: rotate(-12deg) scale(1.5);
+  opacity: 0;
+  pointer-events: none;
+  letter-spacing: 0.1em;
+  animation: stamp 0.55s ease-out forwards;
+  z-index: 100;
+}
+.stamp.pass { color: #34D399; border-color: #34D399; background: rgba(52,211,153,0.10); }
+.stamp.fail { color: #F87171; border-color: #F87171; background: rgba(248,113,113,0.12); }
+@keyframes stamp {
+  0%   { transform: rotate(-12deg) scale(2.4); opacity: 0; }
+  40%  { transform: rotate(-12deg) scale(0.92); opacity: 1; }
+  60%  { transform: rotate(-12deg) scale(1.08); opacity: 1; }
+  100% { transform: rotate(-12deg) scale(1);    opacity: 0.95; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSCRIPT
+   ═══════════════════════════════════════════════════════════════ */
+.transcript {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  max-height: 340px;
+}
+.transcript-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--glass-border);
+}
+.transcript-header .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #EF4444;
+  box-shadow: 0 0 10px #EF4444;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+.transcript-header .t-title {
+  font-weight: 600; letter-spacing: 0.12em;
+  font-size: 12.5px;
+  flex: 1; color: var(--text); text-transform: uppercase;
+}
+.transcript-header .clock {
+  font-family: 'JetBrains Mono', monospace;
+  color: #FDE047;
+  font-size: 14px; font-weight: 500;
+}
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.transcript-log {
+  list-style: none;
+  padding: 8px 18px 12px;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.transcript-log::-webkit-scrollbar { width: 7px; }
+.transcript-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
+.transcript-log li {
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+  display: flex; gap: 11px; align-items: flex-start;
+  animation: slide-in 0.3s var(--ease);
+}
+@keyframes slide-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+.transcript-log .ts {
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  min-width: 58px;
+  padding-top: 2px;
+}
+.transcript-log .actor-tag {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  min-width: 86px;
+  text-align: center;
+}
+.transcript-log .actor-tag.triage       { background: rgba(52,211,153,0.22);  color: #86EFAC; }
+.transcript-log .actor-tag.investigator { background: rgba(251,146,60,0.22);  color: #FDBA74; }
+.transcript-log .actor-tag.advocate     { background: rgba(248,113,113,0.22); color: #FCA5A5; }
+.transcript-log .actor-tag.examiner     { background: rgba(244,114,182,0.22); color: #F9A8D4; }
+.transcript-log .actor-tag.factchecker  { background: rgba(167,139,250,0.28); color: #DDD6FE; }
+.transcript-log .actor-tag.judge        { background: rgba(94,234,212,0.22);  color: #99F6E4; }
+.transcript-log .actor-tag.clerk        { background: rgba(252,211,77,0.22);  color: #FDE68A; }
+.transcript-log .actor-tag.system       { background: rgba(255,255,255,0.10); color: #CBD5E1; }
+.transcript-log .actor-tag.tool         { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+
+.transcript-log .msg { color: var(--text); flex: 1; word-break: break-word; }
+.transcript-log .msg.tool { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--text-dim); }
+.transcript-log .verify-pass { color: #4ADE80; font-weight: 700; }
+.transcript-log .verify-fail { color: #FB7185; font-weight: 700; }
+
+.engine-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-left: 7px;
+  vertical-align: middle;
+  font-family: 'JetBrains Mono', monospace;
+}
+.engine-chip.ml    { background: rgba(52,211,153,0.18); color: #6EE7B7; }
+.engine-chip.rule  { background: rgba(252,211,77,0.18); color: #FDE68A; }
+.engine-chip.graph { background: rgba(96,165,250,0.18); color: #93C5FD; }
+.engine-chip.nli   { background: rgba(167,139,250,0.20); color: #C4B5FD; }
+.engine-chip.llm   { background: rgba(192,132,252,0.25); color: #E9D5FF; }
+.engine-chip.code  { background: rgba(156,163,175,0.18); color: var(--text-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   METERS
+   ═══════════════════════════════════════════════════════════════ */
+.meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 2fr;
+  gap: 8px;
+  padding: 12px;
+}
+.meter {
+  background: rgba(255,255,255,0.035);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid transparent;
+  transition: border-color 0.25s var(--ease);
+}
+.meter:hover { border-color: var(--glass-border); }
+.meter-label {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.meter-value {
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+.meter.big .meter-value { font-size: 24px; }
+.meter-value.glow-llm.active {
+  color: #F3E8FF;
+  text-shadow: 0 0 16px rgba(192,132,252,0.75);
+}
+.meter-value.verdict { font-size: 17px; color: #FDE047; }
+.meter-value.verdict.final {
+  font-size: 19px;
+  background: linear-gradient(90deg, #86EFAC, #4ADE80);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.meter-value.verdict.abstain {
+  background: linear-gradient(90deg, #F87171, #FB923C);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTIFACT DRAWER
+   ═══════════════════════════════════════════════════════════════ */
+.artifact-drawer {
+  background: linear-gradient(135deg, rgba(252,211,77,0.06), rgba(202,138,4,0.04));
+  border: 1px solid rgba(252,211,77,0.20);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  transition: max-height 0.5s var(--ease), opacity 0.4s var(--ease), padding 0.3s var(--ease);
+  max-height: 600px;
+  opacity: 1;
+  overflow: hidden;
+  box-shadow: 0 0 28px -6px rgba(252,211,77,0.20);
+}
+.artifact-drawer.hidden { max-height: 0; opacity: 0; padding: 0; border: 0; }
+.artifact-header {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.16em;
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(252,211,77,0.24);
+  color: #FEF3C7;
+  text-transform: uppercase;
+}
+.seal { font-size: 20px; }
+.seal-r {
+  margin-left: auto;
+  background: rgba(252,211,77,0.22);
+  color: #FEF3C7;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11.5px; letter-spacing: 0.10em;
+}
+#artifact-json {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  max-height: 360px;
+  overflow: auto;
+  background: rgba(0,0,0,0.30);
+  padding: 16px;
+  border-radius: 8px;
+  color: #FEF3C7;
+  border: 1px solid rgba(252,211,77,0.14);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS
+   ═══════════════════════════════════════════════════════════════ */
+.controls {
+  display: flex; gap: 12px; align-items: center;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+.ctrl {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.ctrl:hover:not(:disabled) {
+  background: var(--glass-fill-2);
+  border-color: var(--glass-border-strong);
+}
+.ctrl.primary {
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+.ctrl.primary:hover:not(:disabled) { filter: brightness(1.15); }
+.ctrl:disabled { opacity: 0.32; cursor: not-allowed; }
+
+.speed { display: flex; gap: 5px; align-items: center; color: var(--text-dim); font-size: 12.5px; }
+.speed-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.speed-btn:hover { color: var(--text); }
+.speed-btn.active {
+  color: var(--text);
+  background: rgba(167,139,250,0.20);
+  border-color: rgba(167,139,250,0.55);
+}
+
+.legend {
+  margin-left: auto;
+  display: flex; gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.legend-dot {
+  display: inline-block;
+  width: 11px; height: 11px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.legend-dot.ml    { background: #6EE7B7; }
+.legend-dot.rule  { background: #FDE68A; }
+.legend-dot.graph { background: #93C5FD; }
+.legend-dot.nli   { background: #C4B5FD; }
+.legend-dot.llm   { background: #E9D5FF; }
+
+.error-banner {
+  background: rgba(248,113,113,0.10);
+  color: #FCA5A5;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  border: 1px solid rgba(248,113,113,0.32);
+}
+.hidden { display: none; }
+
+@media (max-width: 1280px) {
+  .api-row { grid-template-columns: 1fr 1fr; }
+  .meters  { grid-template-columns: 1fr 1fr 1fr; }
+  .meter.wide { grid-column: span 3; }
+}
+@media (max-width: 760px) {
+  .topnav { flex-wrap: wrap; }
+  .nav-actions .award-chip { display: none; }
+  .workflow { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); align-self: center; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="aurora-blob blob-1"></div>
+  <div class="aurora-blob blob-2"></div>
+  <div class="aurora-blob blob-3"></div>
+</div>
+
+<div id="app">
+
+  <!-- ════════ TOP NAV ════════ -->
+  <header class="topnav">
+    <div class="brand">
+      <div class="logo-mark">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2 L28 10 L28 22 L16 30 L4 22 L4 10 Z" stroke="url(#brand-grad)" stroke-width="1.6" fill="none"/>
+          <path d="M16 9 L16 23 M10 16 L22 16" stroke="url(#brand-grad)" stroke-width="1.6" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#A78BFA"/>
+              <stop offset="100%" stop-color="#22D3EE"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">JUROR</div>
+        <div class="brand-tag">schema-pluggable annotation agent</div>
+      </div>
+    </div>
+
+    <nav class="mode-switch" id="mode-switch">
+      <button class="mode-opt active" data-mode="demo">
+        <span class="mode-dot demo-dot"></span> Demo
+      </button>
+      <button class="mode-opt" data-mode="live">
+        <span class="mode-dot live-dot"></span> Live
+      </button>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="nav-btn" id="btn-settings" aria-label="API settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+      <div class="award-chip">STAI-X 2026 · Award C</div>
+    </div>
+  </header>
+
+  <!-- ════════ API KEY DRAWER (hidden until Settings is clicked) ════════ -->
+  <section class="api-drawer" id="api-drawer">
+    <div class="api-drawer-inner">
+      <div class="api-row">
+        <div class="api-col">
+          <label class="api-label">Provider</label>
+          <div class="provider-grid">
+            <button class="prov-btn active" data-provider="anthropic">
+              <span class="prov-logo">●</span> Anthropic
+            </button>
+            <button class="prov-btn" data-provider="openai">
+              <span class="prov-logo">●</span> OpenAI
+            </button>
+            <button class="prov-btn" data-provider="google">
+              <span class="prov-logo">●</span> Google
+            </button>
+            <button class="prov-btn" data-provider="deepseek">
+              <span class="prov-logo">●</span> DeepSeek
+            </button>
+          </div>
+        </div>
+        <div class="api-col grow">
+          <label class="api-label">API key  <span class="hint">stored in this tab only · never sent anywhere except the provider</span></label>
+          <input type="password" id="api-key-input" class="api-input" placeholder="sk-ant-… / sk-… / AIza…">
+        </div>
+        <div class="api-col">
+          <label class="api-label">Model</label>
+          <input type="text" id="api-model-input" class="api-input" placeholder="claude-opus-4-6">
+        </div>
+        <div class="api-col">
+          <label class="api-label">&nbsp;</label>
+          <button id="btn-save-key" class="primary-btn">Activate Live</button>
+        </div>
+      </div>
+      <div class="api-status" id="api-status">
+        <span class="status-dot pending"></span>
+        <span id="api-status-text">No key set — running scripted demo trace.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ CASE BAR ════════ -->
+  <section class="casebar glass">
+    <div class="case-info">
+      <div class="case-meta">
+        <span class="lbl">CASE</span>
+        <span id="case-id" class="val">—</span>
+        <span class="lbl">REF</span>
+        <span id="case-ref" class="val ref">—</span>
+        <span class="lbl">GROUND&nbsp;TRUTH</span>
+        <span id="case-gt" class="val gt">—</span>
+      </div>
+      <p id="case-paragraph" class="case-paragraph">—</p>
+    </div>
+    <div class="case-selector">
+      <span class="lbl small">case</span>
+      <button class="case-btn active" data-case="1">01</button>
+      <button class="case-btn" data-case="2">02</button>
+      <button class="case-btn" data-case="3">03</button>
+    </div>
+  </section>
+
+  <!-- ════════ WORKFLOW STRIP (left → right) ════════ -->
+  <main class="workflow glass">
+
+    <!-- ① Triage -->
+    <div class="station actor triage" id="actor-triage">
+      <div class="step-no">01</div>
+      <div class="actor-icon">📋</div>
+      <div class="actor-name">Triage</div>
+      <div class="actor-engine">ML <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">ML gate · routes easy cases</div>
+      <div class="say" id="say-triage"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ② Investigator -->
+    <div class="station actor investigator" id="actor-investigator">
+      <div class="step-no">02</div>
+      <div class="actor-icon">🔍</div>
+      <div class="actor-name">Investigator</div>
+      <div class="actor-engine">RULE+ML+GRAPH</div>
+      <div class="actor-cap">gathers evidence, cheapest tools first</div>
+      <div class="say" id="say-investigator"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ③ Prosecution Panel -->
+    <div class="station panel-station" id="station-panel">
+      <div class="step-no">03</div>
+      <div class="panel-title">PROSECUTION PANEL</div>
+      <div class="panel-sub">one sub-agent per intent · <span class="badge-llm">LLM</span></div>
+
+      <div class="intent-lanes">
+        <div class="actor advocate" id="actor-adv-BG">
+          <div class="intent-name">Background</div>
+          <div class="intent-def">general context / situating prior work</div>
+          <div class="adv-arg" id="arg-BG"></div>
+          <div class="adv-strength" id="str-BG"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-TB">
+          <div class="intent-name">Technical basis</div>
+          <div class="intent-def">uses a method / tool from the cited work</div>
+          <div class="adv-arg" id="arg-TB"></div>
+          <div class="adv-strength" id="str-TB"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-CP">
+          <div class="intent-name">Comparison</div>
+          <div class="intent-def">compares results / approach against it</div>
+          <div class="adv-arg" id="arg-CP"></div>
+          <div class="adv-strength" id="str-CP"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-FI">
+          <div class="intent-name">Fundamental idea</div>
+          <div class="intent-def">core concept that inspires the work</div>
+          <div class="adv-arg" id="arg-FI"></div>
+          <div class="adv-strength" id="str-FI"></div>
+          <div class="strike-overlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ④ Cross-Examiner -->
+    <div class="station actor examiner" id="actor-examiner">
+      <div class="step-no">04</div>
+      <div class="actor-icon">⚔</div>
+      <div class="actor-name">Cross-Examiner</div>
+      <div class="actor-engine">RULE+LLM</div>
+      <div class="actor-cap">attacks weak / unsupported arguments</div>
+      <div class="say" id="say-examiner"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑤ Fact-Checker -->
+    <div class="station actor factchecker" id="actor-factchecker">
+      <div class="step-no">05</div>
+      <div class="actor-icon">🔬</div>
+      <div class="actor-name">Fact-Checker</div>
+      <div class="actor-engine">EXACT+BLEU+NLI <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">verifies every quote against the source</div>
+      <div class="say" id="say-factchecker"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑥ Judge -->
+    <div class="station actor judge" id="actor-judge">
+      <div class="step-no">06</div>
+      <div class="actor-icon">⚖</div>
+      <div class="actor-name">Judge</div>
+      <div class="actor-engine">LLM + CAL</div>
+      <div class="actor-cap">weighs survivors, calibrates → verdict</div>
+      <div class="say" id="say-judge"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑦ Clerk -->
+    <div class="station actor clerk" id="actor-clerk">
+      <div class="step-no">07</div>
+      <div class="actor-icon">📝</div>
+      <div class="actor-name">Clerk</div>
+      <div class="actor-engine">CODE <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">seals the annotation artifact</div>
+      <div class="say" id="say-clerk"></div>
+    </div>
+
+  </main>
+
+  <!-- ════════ TRANSCRIPT ════════ -->
+  <aside class="transcript glass">
+    <div class="transcript-header">
+      <span class="dot"></span>
+      <span class="t-title">Live Transcript</span>
+      <span class="clock" id="clock">00:00.0</span>
+    </div>
+    <ol class="transcript-log" id="transcript-log"></ol>
+  </aside>
+
+  <!-- ════════ METERS ════════ -->
+  <section class="meters glass">
+    <div class="meter">
+      <span class="meter-label">Active engine</span>
+      <span class="meter-value" id="m-engine">—</span>
+    </div>
+    <div class="meter">
+      <span class="meter-label">Tools invoked</span>
+      <span class="meter-value" id="m-tools">0</span>
+    </div>
+    <div class="meter big">
+      <span class="meter-label">LLM calls</span>
+      <span class="meter-value glow-llm" id="m-llm">0</span>
+    </div>
+    <div class="meter big">
+      <span class="meter-label">LLM tokens</span>
+      <span class="meter-value glow-llm" id="m-tokens">0</span>
+    </div>
+    <div class="meter">
+      <span class="meter-label">Stage</span>
+      <span class="meter-value" id="m-stage">—</span>
+    </div>
+    <div class="meter wide">
+      <span class="meter-label">Final verdict</span>
+      <span class="meter-value verdict" id="m-verdict">pending…</span>
+    </div>
+  </section>
+
+  <!-- ════════ ARTIFACT DRAWER ════════ -->
+  <section class="artifact-drawer hidden" id="artifact-drawer">
+    <div class="artifact-header">
+      <span class="seal">⚖</span>
+      ANNOTATION ARTIFACT
+      <span class="seal-r">filed</span>
+    </div>
+    <pre id="artifact-json"></pre>
+  </section>
+
+  <!-- ════════ CONTROLS ════════ -->
+  <footer class="controls glass">
+    <button id="btn-play" class="ctrl primary">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 2 L10 6 L3 10 Z" fill="currentColor"/></svg>
+      Run
+    </button>
+    <button id="btn-pause" class="ctrl" disabled>
+      <svg width="10" height="10" viewBox="0 0 12 12"><rect x="3" y="2" width="2.4" height="8" fill="currentColor"/><rect x="6.6" y="2" width="2.4" height="8" fill="currentColor"/></svg>
+      Pause
+    </button>
+    <button id="btn-restart" class="ctrl">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6 a4 4 0 1 1 1.2 2.8"/><path d="M1.5 2 L1.5 4.8 L4.3 4.8" stroke-linejoin="round"/></svg>
+      Restart
+    </button>
+    <div class="speed">
+      <span class="lbl small">speed</span>
+      <button class="speed-btn" data-speed="0.5">0.5×</button>
+      <button class="speed-btn active" data-speed="1">1×</button>
+      <button class="speed-btn" data-speed="2">2×</button>
+      <button class="speed-btn" data-speed="4">4×</button>
+    </div>
+    <div class="legend">
+      <span class="legend-dot ml"></span> ML
+      <span class="legend-dot rule"></span> Rule
+      <span class="legend-dot graph"></span> Graph
+      <span class="legend-dot nli"></span> NLI
+      <span class="legend-dot llm"></span> LLM
+    </div>
+  </footer>
+
+</div>
+
+<script>
+window.JUROR_TRACES = {"1": {"case_id": "ID_183878", "input": {"paragraph": "In general, simultaneous confidence bands for a function f are constructed by studying the asymptotic distribution of the sup. The approach of Bickel and Rosenblatt (1973) relates this to a study of the distribution of a Gaussian process. This approach to constructing confidence bands has been used in the context of nonparametric estimation by, among others, Hardle (1989) for M-estimators and Claeskens and Van Keilegom (2003) for local polynomial likelihood estimators.", "cited_ref": "Hardle (1989)", "ground_truth": "Background"}, "schema": {"task": "citation_intent", "labels": ["Background", "Technical basis", "Comparison", "Fundamental idea"]}, "stages": [{"id": "triage", "name": "Triage Officer", "engine": "ML", "tools_called": ["tfidf_lr_classifier"], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"difficulty": 0.3, "shortlist": ["Background", "Technical basis", "Comparison", "Fundamental idea"], "probs": {"Background": 0.7, "Technical basis": 0.1, "Comparison": 0.1, "Fundamental idea": 0.1}, "fast_track": false}, "actions": [{"t": 0, "type": "say", "actor": "triage", "text": "New case received: ID_183878."}, {"t": 250, "type": "tool_call", "tool": "tfidf_lr_classifier", "engine": "ML", "summary": "max_prob = 0.700"}, {"t": 700, "type": "say", "actor": "triage", "text": "Difficulty = 0.30. Convening one advocate per intent: Background, Technical basis, Comparison, Fundamental idea."}, {"t": 1100, "type": "shortlist", "value": ["Background", "Technical basis", "Comparison", "Fundamental idea"], "fast_track": false}]}, {"id": "investigator", "name": "Investigator", "engine": "RULE+ML+GRAPH", "tools_called": ["rhetorical_marker_regex", "section_classifier", "co_citation_lookup"], "duration_ms": 0.7, "tokens": 0, "llm_calls": 0, "outputs": {"markers": [{"marker": "has been used", "label": "Background", "pos": 286}, {"marker": "among others", "label": "Background", "pos": 347}, {"marker": "in general", "label": "Background", "pos": 0}], "section": {"section": "Related Work", "confidence": 0.74}, "co_citations": ["Bickel and Rosenblatt (1973)", "Keilegom (2003)"]}, "actions": [{"t": 0, "type": "say", "actor": "investigator", "text": "Gathering evidence; cheapest tools first."}, {"t": 350, "type": "tool_call", "tool": "rhetorical_marker_regex", "engine": "RULE", "summary": "3 marker(s) found"}, {"t": 800, "type": "say", "actor": "investigator", "text": "Found 3 rhetorical marker(s): among others, has been used, in general."}, {"t": 1250, "type": "tool_call", "tool": "section_classifier", "engine": "ML", "summary": "Related Work"}, {"t": 1600, "type": "say", "actor": "investigator", "text": "Section: Related Work (conf 0.74)."}, {"t": 2000, "type": "tool_call", "tool": "co_citation_lookup", "engine": "GRAPH", "summary": "2 co-citation(s)"}, {"t": 2400, "type": "say", "actor": "investigator", "text": "Case file complete \u2014 3 markers, section=Related Work, 2 co-cites."}]}, {"id": "panel", "name": "Prosecution Panel", "engine": "LLM", "tools_called": ["llm_advocate[Background]", "llm_advocate[Technical basis]", "llm_advocate[Comparison]", "llm_advocate[Fundamental idea]"], "duration_ms": 0.0, "tokens": 560, "llm_calls": 4, "outputs": {"advocates": [{"label": "Background", "argument": "I argue Background: 3 marker(s) found (among others, has been used, in general); paragraph is from Related Work.", "evidence_spans": [{"span": "ng confidence bands has been used in the context of nonparametr", "marker": "has been used"}, {"span": "tric estimation by, among others, Hardle (1989) for M-estimato", "marker": "among others"}, {"span": "In general, simultaneous confidence band", "marker": "in general"}], "raw_strength": 3.6}, {"label": "Technical basis", "argument": "I argue Technical basis, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.0}, {"label": "Comparison", "argument": "I argue Comparison, though direct surface evidence is thin.", "evidence_spans": [{"span": "the authors directly outperform the cited method on benchmarks", "marker": "(fabricated)"}], "raw_strength": 0.0}, {"label": "Fundamental idea", "argument": "I argue Fundamental idea, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.0}]}, "actions": [{"t": 0, "type": "advocate_speak", "label": "Background", "text": "I argue Background: 3 marker(s) found (among others, has been used, in general); paragraph is from Related Work.", "strength": 3.6}, {"t": 100, "type": "tool_call", "tool": "llm_advocate[Background]", "engine": "LLM", "summary": "strength=3.6"}, {"t": 1800, "type": "advocate_speak", "label": "Technical basis", "text": "I argue Technical basis, though direct surface evidence is thin.", "strength": 0.0}, {"t": 1900, "type": "tool_call", "tool": "llm_advocate[Technical basis]", "engine": "LLM", "summary": "strength=0.0"}, {"t": 3600, "type": "advocate_speak", "label": "Comparison", "text": "I argue Comparison, though direct surface evidence is thin.", "strength": 0.0}, {"t": 3700, "type": "tool_call", "tool": "llm_advocate[Comparison]", "engine": "LLM", "summary": "strength=0.0"}, {"t": 5400, "type": "advocate_speak", "label": "Fundamental idea", "text": "I argue Fundamental idea, though direct surface evidence is thin.", "strength": 0.0}, {"t": 5500, "type": "tool_call", "tool": "llm_advocate[Fundamental idea]", "engine": "LLM", "summary": "strength=0.0"}]}, {"id": "examiner", "name": "Cross-Examiner", "engine": "RULE+LLM", "tools_called": ["contradiction_pattern", "llm_critic"], "duration_ms": 0.0, "tokens": 160, "llm_calls": 2, "outputs": {"attacks": [{"label": "Technical basis", "attack": "Counter: paragraph is from Related Work, not Methods \u2014 the 'technical basis' claim is implausible here.", "flag": "contradicted"}, {"label": "Comparison", "attack": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence.", "flag": "unsupported"}]}, "actions": [{"t": 0, "type": "attack", "label": "Technical basis", "text": "Counter: paragraph is from Related Work, not Methods \u2014 the 'technical basis' claim is implausible here.", "flag": "contradicted"}, {"t": 1400, "type": "attack", "label": "Comparison", "text": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence.", "flag": "unsupported"}]}, {"id": "fact_checker", "name": "Fact-Checker", "engine": "RULE+NLI", "tools_called": ["exact_span_match", "bleu_overlap"], "duration_ms": 0.1, "tokens": 0, "llm_calls": 0, "outputs": {"verifications": [{"label": "Background", "span": "ng confidence bands has been used in the context of nonparametr", "exact_match": true, "bleu": 0.82, "verified": true}, {"label": "Background", "span": "tric estimation by, among others, Hardle (1989) for M-estimato", "exact_match": true, "bleu": 0.78, "verified": true}, {"label": "Background", "span": "In general, simultaneous confidence band", "exact_match": true, "bleu": 0.8, "verified": true}, {"label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "exact_match": false, "bleu": 0.12, "verified": false}]}, "actions": [{"t": 0, "type": "verify", "label": "Background", "span": "ng confidence bands has been used in the context of nonparametr", "verified": true, "exact": true, "bleu": 0.82}, {"t": 420, "type": "verify", "label": "Background", "span": "tric estimation by, among others, Hardle (1989) for M-estimato", "verified": true, "exact": true, "bleu": 0.78}, {"t": 840, "type": "verify", "label": "Background", "span": "In general, simultaneous confidence band", "verified": true, "exact": true, "bleu": 0.8}, {"t": 1260, "type": "verify", "label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "verified": false, "exact": false, "bleu": 0.12}]}, {"id": "judge", "name": "Judge", "engine": "LLM+CAL", "tools_called": ["llm_arbitrator", "platt_calibrator"], "duration_ms": 0.0, "tokens": 100, "llm_calls": 1, "outputs": {"label": "Background", "confidence": 0.991, "margin": 0.988, "scores": {"Background": 5.8, "Technical basis": 0.02, "Comparison": 0.02, "Fundamental idea": 0.1}, "probs": {"Background": 0.991, "Technical basis": 0.003, "Comparison": 0.003, "Fundamental idea": 0.003}, "abstain": false}, "actions": [{"t": 0, "type": "say", "actor": "judge", "text": "Weighing arguments and verified evidence."}, {"t": 700, "type": "scores", "scores": {"Background": 5.8, "Technical basis": 0.02, "Comparison": 0.02, "Fundamental idea": 0.1}, "probs": {"Background": 0.991, "Technical basis": 0.003, "Comparison": 0.003, "Fundamental idea": 0.003}}, {"t": 1400, "type": "verdict", "label": "Background", "confidence": 0.991, "margin": 0.988, "abstain": false}, {"t": 1700, "type": "say", "actor": "judge", "text": "Verdict: Background  \u00b7  conf 0.99  \u00b7  margin 0.99"}]}, {"id": "clerk", "name": "Clerk", "engine": "CODE", "tools_called": [], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"artifact": {"case_id": "ID_183878", "label": "Background", "confidence": 0.991, "margin": 0.988, "abstain": false, "evidence": [{"span": "ng confidence bands has been used in the context of nonparametr", "verified": true, "method": "exact"}, {"span": "tric estimation by, among others, Hardle (1989) for M-estimato", "verified": true, "method": "exact"}, {"span": "In general, simultaneous confidence band", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Technical basis", "reason": "Counter: paragraph is from Related Work, not Methods \u2014 the 'technical basis' claim is implausible here."}, {"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.00)"}], "ground_truth": "Background"}}, "actions": [{"t": 0, "type": "say", "actor": "clerk", "text": "Sealing the case file."}, {"t": 500, "type": "show_artifact", "artifact": {"case_id": "ID_183878", "label": "Background", "confidence": 0.991, "margin": 0.988, "abstain": false, "evidence": [{"span": "ng confidence bands has been used in the context of nonparametr", "verified": true, "method": "exact"}, {"span": "tric estimation by, among others, Hardle (1989) for M-estimato", "verified": true, "method": "exact"}, {"span": "In general, simultaneous confidence band", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Technical basis", "reason": "Counter: paragraph is from Related Work, not Methods \u2014 the 'technical basis' claim is implausible here."}, {"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.00)"}], "ground_truth": "Background"}}, {"t": 1300, "type": "say", "actor": "clerk", "text": "Annotation artifact filed."}]}], "final_artifact": {"case_id": "ID_183878", "label": "Background", "confidence": 0.991, "margin": 0.988, "abstain": false, "evidence": [{"span": "ng confidence bands has been used in the context of nonparametr", "verified": true, "method": "exact"}, {"span": "tric estimation by, among others, Hardle (1989) for M-estimato", "verified": true, "method": "exact"}, {"span": "In general, simultaneous confidence band", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Technical basis", "reason": "Counter: paragraph is from Related Work, not Methods \u2014 the 'technical basis' claim is implausible here."}, {"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.00)"}], "ground_truth": "Background"}, "summary": {"total_duration_ms": 0.8, "total_tokens": 820, "tools_invoked": 14, "llm_calls": 7, "ground_truth_match": true}}, "2": {"case_id": "ID_99812", "input": {"paragraph": "We follow the boosting framework of Buehlmann and Hothorn (2007), in which regularization is achieved indirectly via the application of penalized base learners. We extend their componentwise gradient boosting to handle conditional transformation models, but the iterative scheme and the stopping criterion remain as in the original work.", "cited_ref": "Buehlmann and Hothorn (2007)", "ground_truth": "Technical basis"}, "schema": {"task": "citation_intent", "labels": ["Background", "Technical basis", "Comparison", "Fundamental idea"]}, "stages": [{"id": "triage", "name": "Triage Officer", "engine": "ML", "tools_called": ["tfidf_lr_classifier"], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"difficulty": 0.3, "shortlist": ["Technical basis", "Comparison", "Fundamental idea", "Background"], "probs": {"Background": 0.014, "Technical basis": 0.704, "Comparison": 0.141, "Fundamental idea": 0.141}, "fast_track": false}, "actions": [{"t": 0, "type": "say", "actor": "triage", "text": "New case received: ID_99812."}, {"t": 250, "type": "tool_call", "tool": "tfidf_lr_classifier", "engine": "ML", "summary": "max_prob = 0.704"}, {"t": 700, "type": "say", "actor": "triage", "text": "Difficulty = 0.30. Convening one advocate per intent: Technical basis, Comparison, Fundamental idea, Background."}, {"t": 1100, "type": "shortlist", "value": ["Technical basis", "Comparison", "Fundamental idea", "Background"], "fast_track": false}]}, {"id": "investigator", "name": "Investigator", "engine": "RULE+ML+GRAPH", "tools_called": ["rhetorical_marker_regex", "section_classifier", "co_citation_lookup"], "duration_ms": 0.7, "tokens": 0, "llm_calls": 0, "outputs": {"markers": [{"marker": "we follow", "label": "Technical basis", "pos": 0}, {"marker": "we extend", "label": "Technical basis", "pos": 161}], "section": {"section": "Methods", "confidence": 0.78}, "co_citations": []}, "actions": [{"t": 0, "type": "say", "actor": "investigator", "text": "Gathering evidence; cheapest tools first."}, {"t": 350, "type": "tool_call", "tool": "rhetorical_marker_regex", "engine": "RULE", "summary": "2 marker(s) found"}, {"t": 800, "type": "say", "actor": "investigator", "text": "Found 2 rhetorical marker(s): we extend, we follow."}, {"t": 1250, "type": "tool_call", "tool": "section_classifier", "engine": "ML", "summary": "Methods"}, {"t": 1600, "type": "say", "actor": "investigator", "text": "Section: Methods (conf 0.78)."}, {"t": 2000, "type": "tool_call", "tool": "co_citation_lookup", "engine": "GRAPH", "summary": "0 co-citation(s)"}, {"t": 2400, "type": "say", "actor": "investigator", "text": "Case file complete \u2014 2 markers, section=Methods, 0 co-cites."}]}, {"id": "panel", "name": "Prosecution Panel", "engine": "LLM", "tools_called": ["llm_advocate[Technical basis]", "llm_advocate[Comparison]", "llm_advocate[Fundamental idea]", "llm_advocate[Background]"], "duration_ms": 0.0, "tokens": 560, "llm_calls": 4, "outputs": {"advocates": [{"label": "Technical basis", "argument": "I argue Technical basis: 2 marker(s) found (we extend, we follow); paragraph is from Methods.", "evidence_spans": [{"span": "We follow the boosting framework of Bue", "marker": "we follow"}, {"span": "ized base learners. We extend their componentwise gradient ", "marker": "we extend"}], "raw_strength": 2.6}, {"label": "Comparison", "argument": "I argue Comparison, though direct surface evidence is thin.", "evidence_spans": [{"span": "the authors directly outperform the cited method on benchmarks", "marker": "(fabricated)"}], "raw_strength": 0.0}, {"label": "Fundamental idea", "argument": "I argue Fundamental idea, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.0}, {"label": "Background", "argument": "I argue Background: paragraph is from Methods; WARNING: counter-markers ['we follow'].", "evidence_spans": [], "raw_strength": 0.0}]}, "actions": [{"t": 0, "type": "advocate_speak", "label": "Technical basis", "text": "I argue Technical basis: 2 marker(s) found (we extend, we follow); paragraph is from Methods.", "strength": 2.6}, {"t": 100, "type": "tool_call", "tool": "llm_advocate[Technical basis]", "engine": "LLM", "summary": "strength=2.6"}, {"t": 1800, "type": "advocate_speak", "label": "Comparison", "text": "I argue Comparison, though direct surface evidence is thin.", "strength": 0.0}, {"t": 1900, "type": "tool_call", "tool": "llm_advocate[Comparison]", "engine": "LLM", "summary": "strength=0.0"}, {"t": 3600, "type": "advocate_speak", "label": "Fundamental idea", "text": "I argue Fundamental idea, though direct surface evidence is thin.", "strength": 0.0}, {"t": 3700, "type": "tool_call", "tool": "llm_advocate[Fundamental idea]", "engine": "LLM", "summary": "strength=0.0"}, {"t": 5400, "type": "advocate_speak", "label": "Background", "text": "I argue Background: paragraph is from Methods; WARNING: counter-markers ['we follow'].", "strength": 0.0}, {"t": 5500, "type": "tool_call", "tool": "llm_advocate[Background]", "engine": "LLM", "summary": "strength=0.0"}]}, {"id": "examiner", "name": "Cross-Examiner", "engine": "RULE+LLM", "tools_called": ["contradiction_pattern", "llm_critic"], "duration_ms": 0.0, "tokens": 160, "llm_calls": 2, "outputs": {"attacks": [{"label": "Comparison", "attack": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence.", "flag": "unsupported"}, {"label": "Background", "attack": "Counter: only a single weak marker; not enough signal.", "flag": "weak"}]}, "actions": [{"t": 0, "type": "attack", "label": "Comparison", "text": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence.", "flag": "unsupported"}, {"t": 1400, "type": "attack", "label": "Background", "text": "Counter: only a single weak marker; not enough signal.", "flag": "weak"}]}, {"id": "fact_checker", "name": "Fact-Checker", "engine": "RULE+NLI", "tools_called": ["exact_span_match", "bleu_overlap"], "duration_ms": 0.1, "tokens": 0, "llm_calls": 0, "outputs": {"verifications": [{"label": "Technical basis", "span": "We follow the boosting framework of Bue", "exact_match": true, "bleu": 0.86, "verified": true}, {"label": "Technical basis", "span": "ized base learners. We extend their componentwise gradient ", "exact_match": true, "bleu": 0.88, "verified": true}, {"label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "exact_match": false, "bleu": 0.12, "verified": false}]}, "actions": [{"t": 0, "type": "verify", "label": "Technical basis", "span": "We follow the boosting framework of Bue", "verified": true, "exact": true, "bleu": 0.86}, {"t": 420, "type": "verify", "label": "Technical basis", "span": "ized base learners. We extend their componentwise gradient ", "verified": true, "exact": true, "bleu": 0.88}, {"t": 840, "type": "verify", "label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "verified": false, "exact": false, "bleu": 0.12}]}, {"id": "judge", "name": "Judge", "engine": "LLM+CAL", "tools_called": ["llm_arbitrator", "platt_calibrator"], "duration_ms": 0.0, "tokens": 100, "llm_calls": 1, "outputs": {"label": "Technical basis", "confidence": 0.959, "margin": 0.944, "scores": {"Technical basis": 4.304, "Comparison": 0.02, "Fundamental idea": 0.141, "Background": 0.02}, "probs": {"Technical basis": 0.959, "Comparison": 0.013, "Fundamental idea": 0.015, "Background": 0.013}, "abstain": false}, "actions": [{"t": 0, "type": "say", "actor": "judge", "text": "Weighing arguments and verified evidence."}, {"t": 700, "type": "scores", "scores": {"Technical basis": 4.304, "Comparison": 0.02, "Fundamental idea": 0.141, "Background": 0.02}, "probs": {"Technical basis": 0.959, "Comparison": 0.013, "Fundamental idea": 0.015, "Background": 0.013}}, {"t": 1400, "type": "verdict", "label": "Technical basis", "confidence": 0.959, "margin": 0.944, "abstain": false}, {"t": 1700, "type": "say", "actor": "judge", "text": "Verdict: Technical basis  \u00b7  conf 0.96  \u00b7  margin 0.94"}]}, {"id": "clerk", "name": "Clerk", "engine": "CODE", "tools_called": [], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"artifact": {"case_id": "ID_99812", "label": "Technical basis", "confidence": 0.959, "margin": 0.944, "abstain": false, "evidence": [{"span": "We follow the boosting framework of Bue", "verified": true, "method": "exact"}, {"span": "ized base learners. We extend their componentwise gradient ", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.01)"}, {"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}], "ground_truth": "Technical basis"}}, "actions": [{"t": 0, "type": "say", "actor": "clerk", "text": "Sealing the case file."}, {"t": 500, "type": "show_artifact", "artifact": {"case_id": "ID_99812", "label": "Technical basis", "confidence": 0.959, "margin": 0.944, "abstain": false, "evidence": [{"span": "We follow the boosting framework of Bue", "verified": true, "method": "exact"}, {"span": "ized base learners. We extend their componentwise gradient ", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.01)"}, {"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}], "ground_truth": "Technical basis"}}, {"t": 1300, "type": "say", "actor": "clerk", "text": "Annotation artifact filed."}]}], "final_artifact": {"case_id": "ID_99812", "label": "Technical basis", "confidence": 0.959, "margin": 0.944, "abstain": false, "evidence": [{"span": "We follow the boosting framework of Bue", "verified": true, "method": "exact"}, {"span": "ized base learners. We extend their componentwise gradient ", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Comparison", "reason": "Counter: no real comparative verb appears in the paragraph; this argument cannot stand on the textual evidence."}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.01)"}, {"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}], "ground_truth": "Technical basis"}, "summary": {"total_duration_ms": 0.8, "total_tokens": 820, "tools_invoked": 14, "llm_calls": 7, "ground_truth_match": true}}, "3": {"case_id": "ID_77541", "input": {"paragraph": "Our proposed kernel estimator achieves a parametric rate of convergence on subsets, which is faster than the non-parametric rate reported by Yao et al. (2005) under the sparsely observed regime. In contrast to their approach, our method does not require functional principal component analysis as a preprocessing step.", "cited_ref": "Yao et al. (2005)", "ground_truth": "Comparison"}, "schema": {"task": "citation_intent", "labels": ["Background", "Technical basis", "Comparison", "Fundamental idea"]}, "stages": [{"id": "triage", "name": "Triage Officer", "engine": "ML", "tools_called": ["tfidf_lr_classifier"], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"difficulty": 0.5, "shortlist": ["Comparison", "Background", "Technical basis", "Fundamental idea"], "probs": {"Background": 0.167, "Technical basis": 0.167, "Comparison": 0.5, "Fundamental idea": 0.167}, "fast_track": false}, "actions": [{"t": 0, "type": "say", "actor": "triage", "text": "New case received: ID_77541."}, {"t": 250, "type": "tool_call", "tool": "tfidf_lr_classifier", "engine": "ML", "summary": "max_prob = 0.500"}, {"t": 700, "type": "say", "actor": "triage", "text": "Difficulty = 0.50. Convening one advocate per intent: Comparison, Background, Technical basis, Fundamental idea."}, {"t": 1100, "type": "shortlist", "value": ["Comparison", "Background", "Technical basis", "Fundamental idea"], "fast_track": false}]}, {"id": "investigator", "name": "Investigator", "engine": "RULE+ML+GRAPH", "tools_called": ["rhetorical_marker_regex", "section_classifier", "co_citation_lookup"], "duration_ms": 0.7, "tokens": 0, "llm_calls": 0, "outputs": {"markers": [{"marker": "in contrast", "label": "Comparison", "pos": 195}], "section": {"section": "Methods", "confidence": 0.78}, "co_citations": []}, "actions": [{"t": 0, "type": "say", "actor": "investigator", "text": "Gathering evidence; cheapest tools first."}, {"t": 350, "type": "tool_call", "tool": "rhetorical_marker_regex", "engine": "RULE", "summary": "1 marker(s) found"}, {"t": 800, "type": "say", "actor": "investigator", "text": "Found 1 rhetorical marker(s): in contrast."}, {"t": 1250, "type": "tool_call", "tool": "section_classifier", "engine": "ML", "summary": "Methods"}, {"t": 1600, "type": "say", "actor": "investigator", "text": "Section: Methods (conf 0.78)."}, {"t": 2000, "type": "tool_call", "tool": "co_citation_lookup", "engine": "GRAPH", "summary": "0 co-citation(s)"}, {"t": 2400, "type": "say", "actor": "investigator", "text": "Case file complete \u2014 1 markers, section=Methods, 0 co-cites."}]}, {"id": "panel", "name": "Prosecution Panel", "engine": "LLM", "tools_called": ["llm_advocate[Comparison]", "llm_advocate[Background]", "llm_advocate[Technical basis]", "llm_advocate[Fundamental idea]"], "duration_ms": 0.0, "tokens": 560, "llm_calls": 4, "outputs": {"advocates": [{"label": "Comparison", "argument": "I argue Comparison: 1 marker(s) found (in contrast); paragraph is from Methods.", "evidence_spans": [{"span": "ly observed regime. In contrast to their approach, our method", "marker": "in contrast"}, {"span": "the authors directly outperform the cited method on benchmarks", "marker": "(fabricated)"}], "raw_strength": 1.0}, {"label": "Background", "argument": "I argue Background, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.0}, {"label": "Technical basis", "argument": "I argue Technical basis, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.6}, {"label": "Fundamental idea", "argument": "I argue Fundamental idea, though direct surface evidence is thin.", "evidence_spans": [], "raw_strength": 0.0}]}, "actions": [{"t": 0, "type": "advocate_speak", "label": "Comparison", "text": "I argue Comparison: 1 marker(s) found (in contrast); paragraph is from Methods.", "strength": 1.0}, {"t": 100, "type": "tool_call", "tool": "llm_advocate[Comparison]", "engine": "LLM", "summary": "strength=1.0"}, {"t": 1800, "type": "advocate_speak", "label": "Background", "text": "I argue Background, though direct surface evidence is thin.", "strength": 0.0}, {"t": 1900, "type": "tool_call", "tool": "llm_advocate[Background]", "engine": "LLM", "summary": "strength=0.0"}, {"t": 3600, "type": "advocate_speak", "label": "Technical basis", "text": "I argue Technical basis, though direct surface evidence is thin.", "strength": 0.6}, {"t": 3700, "type": "tool_call", "tool": "llm_advocate[Technical basis]", "engine": "LLM", "summary": "strength=0.6"}, {"t": 5400, "type": "advocate_speak", "label": "Fundamental idea", "text": "I argue Fundamental idea, though direct surface evidence is thin.", "strength": 0.0}, {"t": 5500, "type": "tool_call", "tool": "llm_advocate[Fundamental idea]", "engine": "LLM", "summary": "strength=0.0"}]}, {"id": "examiner", "name": "Cross-Examiner", "engine": "RULE+LLM", "tools_called": ["contradiction_pattern", "llm_critic"], "duration_ms": 0.0, "tokens": 80, "llm_calls": 1, "outputs": {"attacks": [{"label": "Background", "attack": "Counter: only a single weak marker; not enough signal.", "flag": "weak"}]}, "actions": [{"t": 0, "type": "attack", "label": "Background", "text": "Counter: only a single weak marker; not enough signal.", "flag": "weak"}]}, {"id": "fact_checker", "name": "Fact-Checker", "engine": "RULE+NLI", "tools_called": ["exact_span_match", "bleu_overlap"], "duration_ms": 0.1, "tokens": 0, "llm_calls": 0, "outputs": {"verifications": [{"label": "Comparison", "span": "ly observed regime. In contrast to their approach, our method", "exact_match": true, "bleu": 0.9, "verified": true}, {"label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "exact_match": false, "bleu": 0.38, "verified": false}]}, "actions": [{"t": 0, "type": "verify", "label": "Comparison", "span": "ly observed regime. In contrast to their approach, our method", "verified": true, "exact": true, "bleu": 0.9}, {"t": 420, "type": "verify", "label": "Comparison", "span": "the authors directly outperform the cited method on benchmarks", "verified": false, "exact": false, "bleu": 0.38}]}, {"id": "judge", "name": "Judge", "engine": "LLM+CAL", "tools_called": ["llm_arbitrator", "platt_calibrator"], "duration_ms": 0.0, "tokens": 100, "llm_calls": 1, "outputs": {"label": "Comparison", "confidence": 0.629, "margin": 0.446, "scores": {"Comparison": 2.0, "Background": 0.02, "Technical basis": 0.767, "Fundamental idea": 0.167}, "probs": {"Comparison": 0.629, "Background": 0.087, "Technical basis": 0.183, "Fundamental idea": 0.101}, "abstain": false}, "actions": [{"t": 0, "type": "say", "actor": "judge", "text": "Weighing arguments and verified evidence."}, {"t": 700, "type": "scores", "scores": {"Comparison": 2.0, "Background": 0.02, "Technical basis": 0.767, "Fundamental idea": 0.167}, "probs": {"Comparison": 0.629, "Background": 0.087, "Technical basis": 0.183, "Fundamental idea": 0.101}}, {"t": 1400, "type": "verdict", "label": "Comparison", "confidence": 0.629, "margin": 0.446, "abstain": false}, {"t": 1700, "type": "say", "actor": "judge", "text": "Verdict: Comparison  \u00b7  conf 0.63  \u00b7  margin 0.45"}]}, {"id": "clerk", "name": "Clerk", "engine": "CODE", "tools_called": [], "duration_ms": 0.0, "tokens": 0, "llm_calls": 0, "outputs": {"artifact": {"case_id": "ID_77541", "label": "Comparison", "confidence": 0.629, "margin": 0.446, "abstain": false, "evidence": [{"span": "ly observed regime. In contrast to their approach, our method", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}, {"label": "Technical basis", "reason": "lower posterior than winner (0.18)"}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.10)"}], "ground_truth": "Comparison"}}, "actions": [{"t": 0, "type": "say", "actor": "clerk", "text": "Sealing the case file."}, {"t": 500, "type": "show_artifact", "artifact": {"case_id": "ID_77541", "label": "Comparison", "confidence": 0.629, "margin": 0.446, "abstain": false, "evidence": [{"span": "ly observed regime. In contrast to their approach, our method", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}, {"label": "Technical basis", "reason": "lower posterior than winner (0.18)"}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.10)"}], "ground_truth": "Comparison"}}, {"t": 1300, "type": "say", "actor": "clerk", "text": "Annotation artifact filed."}]}], "final_artifact": {"case_id": "ID_77541", "label": "Comparison", "confidence": 0.629, "margin": 0.446, "abstain": false, "evidence": [{"span": "ly observed regime. In contrast to their approach, our method", "verified": true, "method": "exact"}], "rejected_alternatives": [{"label": "Background", "reason": "Counter: only a single weak marker; not enough signal."}, {"label": "Technical basis", "reason": "lower posterior than winner (0.18)"}, {"label": "Fundamental idea", "reason": "lower posterior than winner (0.10)"}], "ground_truth": "Comparison"}, "summary": {"total_duration_ms": 0.8, "total_tokens": 740, "tools_invoked": 14, "llm_calls": 6, "ground_truth_match": true}}};
+/* ═══════════════════════════════════════════════════════════════
+   JUROR · Live Agent · client-side LLM runtime
+   ----------------------------------------------------------------
+   When the user supplies an API key, this module replaces the
+   scripted demo trace by actually running the agent in the browser.
+   It emits the SAME action stream (`flat` array) that animation.js
+   already knows how to play, so the visual layer is unchanged.
+
+   Providers supported:
+     - anthropic  (Claude Messages API; requires
+                   `anthropic-dangerous-direct-browser-access` header)
+     - openai     (Chat Completions; CORS works out of the box)
+     - google     (Gemini generateContent)
+     - deepseek   (OpenAI-compatible; CORS as of late 2024)
+
+   The key NEVER leaves the browser except to go directly to the
+   provider's official endpoint.  No proxy server.
+   ═══════════════════════════════════════════════════════════════ */
+
+window.JUROR_LIVE = (function () {
+
+  // ───────────────────────────────────────────────────────────
+  //  Provider configuration
+  // ───────────────────────────────────────────────────────────
+  const PROVIDERS = {
+    anthropic: {
+      defaultModel: 'claude-opus-4-6',
+      keyHint:      'sk-ant-…',
+      endpoint:     'https://api.anthropic.com/v1/messages',
+      buildBody:    (sys, user, model, max_tokens) => ({
+        model, max_tokens, temperature: 0,
+        system: sys,
+        messages: [{ role: 'user', content: user }],
+      }),
+      buildHeaders: (key) => ({
+        'x-api-key':                                 key,
+        'anthropic-version':                         '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type':                              'application/json',
+      }),
+      parseResponse: (j) => ({
+        text:   j.content?.[0]?.text ?? '',
+        tokens: (j.usage?.input_tokens || 0) + (j.usage?.output_tokens || 0),
+      }),
+    },
+
+    openai: {
+      defaultModel: 'gpt-5.4',
+      keyHint:      'sk-…',
+      endpoint:     'https://api.openai.com/v1/chat/completions',
+      buildBody:    (sys, user, model, max_tokens) => ({
+        model, max_tokens, temperature: 0,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user',   content: user },
+        ],
+      }),
+      buildHeaders: (key) => ({
+        'Authorization': `Bearer ${key}`,
+        'content-type': 'application/json',
+      }),
+      parseResponse: (j) => ({
+        text:   j.choices?.[0]?.message?.content ?? '',
+        tokens: j.usage?.total_tokens || 0,
+      }),
+    },
+
+    google: {
+      defaultModel: 'gemini-3.1-pro',
+      keyHint:      'AIza…',
+      endpoint:     null,   // computed per request because key goes in URL
+      buildBody:    (sys, user, model, max_tokens) => ({
+        systemInstruction: { parts: [{ text: sys }] },
+        contents:           [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig:   { temperature: 0, maxOutputTokens: max_tokens },
+      }),
+      buildHeaders: ()    => ({ 'content-type': 'application/json' }),
+      buildUrl:     (key, model) =>
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+      parseResponse: (j) => ({
+        text:   j.candidates?.[0]?.content?.parts?.[0]?.text ?? '',
+        tokens: (j.usageMetadata?.totalTokenCount) || 0,
+      }),
+    },
+
+    deepseek: {
+      defaultModel: 'deepseek-chat',
+      keyHint:      'sk-…',
+      endpoint:     'https://api.deepseek.com/v1/chat/completions',
+      buildBody:    (sys, user, model, max_tokens) => ({
+        model, max_tokens, temperature: 0,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user',   content: user },
+        ],
+      }),
+      buildHeaders: (key) => ({
+        'Authorization': `Bearer ${key}`,
+        'content-type': 'application/json',
+      }),
+      parseResponse: (j) => ({
+        text:   j.choices?.[0]?.message?.content ?? '',
+        tokens: j.usage?.total_tokens || 0,
+      }),
+    },
+  };
+
+  function defaultModelFor(provider) { return PROVIDERS[provider]?.defaultModel ?? ''; }
+
+  // ───────────────────────────────────────────────────────────
+  //  Local non-LLM tools (mirror the prototype/juror.py logic)
+  // ───────────────────────────────────────────────────────────
+  const LABELS = ['Background', 'Technical basis', 'Comparison', 'Fundamental idea'];
+
+  const LABEL_PRIORS = {
+    'Background': {
+      markers: ['see e.g.', 'for a review', 'has been used', 'among others',
+                'as discussed', 'in general', 'previously', 'literature'],
+      negative_verbs: ['we follow', 'we adopt', 'we use', 'compared to', 'outperform'],
+    },
+    'Technical basis': {
+      markers: ['we follow', 'we adopt', 'we use', 'we extend',
+                'based on', 'building on', 'we apply', 'we implement'],
+      negative_verbs: [],
+    },
+    'Comparison': {
+      markers: ['compared to', 'in contrast', 'outperform', 'worse than',
+                'vs.', 'performs better'],
+      negative_verbs: [],
+    },
+    'Fundamental idea': {
+      markers: ['based on the idea', 'inspired by', 'the key insight',
+                'motivated by', 'underlying principle'],
+      negative_verbs: [],
+    },
+  };
+
+  function tfidfLrClassifier(text) {
+    const lower = text.toLowerCase();
+    const scores = {};
+    for (const [label, prior] of Object.entries(LABEL_PRIORS)) {
+      let s = 0.5;
+      for (const m of prior.markers)        if (lower.includes(m))            s += 1.0;
+      for (const v of prior.negative_verbs) if (lower.includes(v))            s -= 0.7;
+      scores[label] = Math.max(s, 0.05);
+    }
+    const total = Object.values(scores).reduce((a, b) => a + b, 0);
+    const probs = {};
+    for (const [k, v] of Object.entries(scores)) probs[k] = +(v / total).toFixed(3);
+    const top = Object.entries(probs).sort((a, b) => b[1] - a[1])[0][0];
+    return { predicted_label: top, probs, max_prob: probs[top],
+             difficulty: +(1 - probs[top]).toFixed(2) };
+  }
+
+  function rhetoricalMarkers(text) {
+    const lower = text.toLowerCase();
+    const found = [];
+    for (const [label, prior] of Object.entries(LABEL_PRIORS)) {
+      for (const m of prior.markers) {
+        let idx = 0;
+        while ((idx = lower.indexOf(m, idx)) !== -1) {
+          found.push({ marker: m, label, pos: idx });
+          idx += m.length;
+        }
+      }
+    }
+    return found;
+  }
+
+  function sectionClassifier(text) {
+    const t = text.toLowerCase();
+    if (['we propose', 'our method', 'we follow', 'we extend', 'we apply', 'we implement']
+        .some(k => t.includes(k))) return { section: 'Methods', confidence: 0.78 };
+    if (['in general', 'for a review', 'literature', 'previously', 'has been used']
+        .some(k => t.includes(k))) return { section: 'Related Work', confidence: 0.74 };
+    if (['outperform', 'results show', 'achieves a', 'compared to', 'in contrast']
+        .some(k => t.includes(k))) return { section: 'Experiments / Comparison', confidence: 0.68 };
+    return { section: 'Unknown', confidence: 0.30 };
+  }
+
+  function coCitationLookup(ref, paragraph) {
+    const re = /[A-Z][A-Za-z]+(?:\s+et\s+al\.?|\s+and\s+[A-Z][A-Za-z]+)?\s*\(\d{4}\)/g;
+    const refs = paragraph.match(re) || [];
+    return refs.filter(r => r.trim() !== ref.trim()).slice(0, 5);
+  }
+
+  function exactSpanMatch(span, source) {
+    const a = span.replace(/\s+/g, ' ').trim().toLowerCase();
+    const b = source.replace(/\s+/g, ' ').trim().toLowerCase();
+    return b.includes(a);
+  }
+
+  function bleuOverlap(span, source) {
+    const s = new Set(span.toLowerCase().split(/\s+/));
+    const t = new Set(source.toLowerCase().split(/\s+/));
+    if (s.size === 0) return 0;
+    let inter = 0;
+    for (const w of s) if (t.has(w)) inter++;
+    return inter / s.size;
+  }
+
+  // ───────────────────────────────────────────────────────────
+  //  LLM call wrapper
+  // ───────────────────────────────────────────────────────────
+  async function callLLM(provider, key, model, systemPrompt, userPrompt, maxTokens = 220) {
+    const p = PROVIDERS[provider];
+    if (!p) throw new Error('Unknown provider: ' + provider);
+
+    const url     = p.buildUrl  ? p.buildUrl(key, model) : p.endpoint;
+    const headers = p.buildHeaders(key);
+    const body    = JSON.stringify(p.buildBody(systemPrompt, userPrompt, model, maxTokens));
+
+    const resp = await fetch(url, { method: 'POST', headers, body });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`${provider} HTTP ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+    const j = await resp.json();
+    return p.parseResponse(j);
+  }
+
+  // ───────────────────────────────────────────────────────────
+  //  Run live agent against one case input.  Builds a trace
+  //  with the exact same shape as the JSON files in traces/.
+  // ───────────────────────────────────────────────────────────
+  async function runCase({ caseInput, config, onProgress }) {
+    const trace = {
+      case_id: caseInput.case_id,
+      input:   { paragraph:        caseInput.paragraph,
+                 cited_ref:        caseInput.ref_clean_citation,
+                 ground_truth:     caseInput.ground_truth || null },
+      schema:  { task: 'citation_intent', labels: LABELS },
+      stages:  [],
+    };
+
+    const report = (stage) => { if (onProgress) onProgress(stage); };
+
+    // ─── Stage 1: Triage ────────────────────────────────────
+    const t0 = performance.now();
+    const triage = tfidfLrClassifier(caseInput.paragraph);
+    const sortedProbs = Object.entries(triage.probs).sort((a, b) => b[1] - a[1]);
+    const shortlist = sortedProbs.slice(0, 3).filter(([, p]) => p > 0.05).map(([l]) => l);
+    const triageStage = {
+      id: 'triage', name: 'Triage Officer', engine: 'ML',
+      tools_called: ['tfidf_lr_classifier'],
+      duration_ms: +(performance.now() - t0).toFixed(1),
+      tokens: 0, llm_calls: 0,
+      outputs: { difficulty: triage.difficulty, shortlist, probs: triage.probs,
+                 fast_track: triage.difficulty < 0.30 },
+      actions: [
+        { t: 0,    type: 'say',       actor: 'triage',
+          text: `New case received: ${caseInput.case_id}.` },
+        { t: 250,  type: 'tool_call', tool: 'tfidf_lr_classifier', engine: 'ML',
+          summary: `max_prob = ${triage.max_prob.toFixed(3)}` },
+        { t: 700,  type: 'say',       actor: 'triage',
+          text: `Difficulty = ${triage.difficulty.toFixed(2)}. Shortlisting: ${shortlist.join(', ')}.` },
+        { t: 1100, type: 'shortlist', value: shortlist, fast_track: triage.difficulty < 0.30 },
+      ],
+    };
+    trace.stages.push(triageStage);
+    report(triageStage);
+
+    // ─── Stage 2: Investigator ──────────────────────────────
+    const t1 = performance.now();
+    const markers   = rhetoricalMarkers(caseInput.paragraph);
+    const section   = sectionClassifier(caseInput.paragraph);
+    const coCites   = coCitationLookup(caseInput.ref_clean_citation, caseInput.paragraph);
+    const invStage = {
+      id: 'investigator', name: 'Investigator', engine: 'RULE+ML+GRAPH',
+      tools_called: ['rhetorical_marker_regex', 'section_classifier', 'co_citation_lookup'],
+      duration_ms: +(performance.now() - t1).toFixed(1),
+      tokens: 0, llm_calls: 0,
+      outputs: { markers, section, co_citations: coCites },
+      actions: [
+        { t: 0,    type: 'say',       actor: 'investigator', text: 'Gathering evidence; cheapest tools first.' },
+        { t: 350,  type: 'tool_call', tool: 'rhetorical_marker_regex', engine: 'RULE',  summary: `${markers.length} marker(s) found` },
+        { t: 800,  type: 'say',       actor: 'investigator', text: `Found ${markers.length} rhetorical marker(s).` },
+        { t: 1250, type: 'tool_call', tool: 'section_classifier',      engine: 'ML',    summary: section.section },
+        { t: 1600, type: 'say',       actor: 'investigator', text: `Section: ${section.section} (conf ${section.confidence}).` },
+        { t: 2000, type: 'tool_call', tool: 'co_citation_lookup',      engine: 'GRAPH', summary: `${coCites.length} co-citation(s)` },
+        { t: 2400, type: 'say',       actor: 'investigator', text: `Case file complete.` },
+      ],
+    };
+    trace.stages.push(invStage);
+    report(invStage);
+
+    // ─── Stage 3: Prosecution Panel (REAL LLM, one call per intent) ─
+    const t2 = performance.now();
+    const advocates = [];
+    const panelActions = [];
+    let actionT = 0;
+    let panelTokens = 0;
+
+    const intentDefs = {
+      'Background':      'the cited work provides general background or situating context',
+      'Technical basis': 'the citing paper uses, adopts, extends, or builds upon methods from the cited work',
+      'Comparison':      'the citing paper compares its methods or findings against the cited work',
+      'Fundamental idea':'the cited work provides a core theoretical concept or key insight',
+    };
+
+    const panelSys = (
+      'You are an expert citation analyst arguing as an advocate. '
+      + 'Given a paragraph and a cited reference, you will write a SHORT (under 25 words) '
+      + 'argument for why the citation intent is YOUR ASSIGNED LABEL. '
+      + 'Cite specific text from the paragraph if possible. '
+      + 'Do not include explanations or caveats. Speak in first person, like a lawyer.'
+    );
+
+    for (const label of shortlist) {
+      const userPrompt =
+        `Paragraph: "${caseInput.paragraph}"\n\n`
+        + `Cited reference: ${caseInput.ref_clean_citation}\n\n`
+        + `Your assigned label: ${label}\n`
+        + `Label definition: ${intentDefs[label]}\n\n`
+        + `Write your single-line argument now, starting with "I argue ${label}...".`;
+
+      let argText, tokens;
+      try {
+        const r = await callLLM(config.provider, config.apiKey, config.model || defaultModelFor(config.provider),
+                                panelSys, userPrompt, 100);
+        argText = (r.text || '').trim() || `I argue ${label}.`;
+        tokens  = r.tokens;
+      } catch (e) {
+        argText = `I argue ${label}. (LLM call failed: ${e.message.slice(0, 60)})`;
+        tokens  = 0;
+      }
+      panelTokens += tokens;
+
+      // detect evidence spans by regex against the paragraph
+      const evSpans = [];
+      const qmatch = argText.match(/"([^"]{6,120})"/g) || [];
+      for (const q of qmatch) evSpans.push({ span: q.replace(/"/g, ''), marker: 'cited' });
+      // strength = number of matched real markers + bonus for verifiable evidence
+      const labelMarkers = markers.filter(m => m.label === label);
+      let strength = labelMarkers.length * 1.0;
+      if (section.section === 'Related Work'           && label === 'Background')      strength += 0.6;
+      if (section.section === 'Methods'                && label === 'Technical basis') strength += 0.6;
+      if (section.section.startsWith('Experiments')    && label === 'Comparison')      strength += 0.4;
+
+      advocates.push({ label, argument: argText, evidence_spans: evSpans,
+                       raw_strength: +Math.max(strength, 0).toFixed(2) });
+
+      panelActions.push(
+        { t: actionT,       type: 'advocate_speak', label, text: argText, strength: +strength.toFixed(2) },
+        { t: actionT + 100, type: 'tool_call', tool: `llm_advocate[${label}]`, engine: 'LLM',
+          summary: `${tokens} tokens` },
+      );
+      actionT += 1800;
+    }
+
+    const panelStage = {
+      id: 'panel', name: 'Prosecution Panel', engine: 'LLM',
+      tools_called: advocates.map(a => `llm_advocate[${a.label}]`),
+      duration_ms: +(performance.now() - t2).toFixed(1),
+      tokens: panelTokens, llm_calls: advocates.length,
+      outputs: { advocates },
+      actions: panelActions,
+    };
+    trace.stages.push(panelStage);
+    report(panelStage);
+
+    // ─── Stage 4: Cross-Examiner (REAL LLM, one call) ───────
+    const t3 = performance.now();
+    const attacks = [];
+    const examinerActions = [];
+
+    // Rule-based pre-flag: if section conflicts with label
+    for (const adv of advocates) {
+      let flag = null, text = null;
+      if (adv.label === 'Technical basis' && section.section === 'Related Work') {
+        flag = 'contradicted';
+        text = `Paragraph is from Related Work, not Methods — the 'technical basis' claim is undermined.`;
+      } else if (adv.label === 'Comparison' && adv.raw_strength < 0.5) {
+        flag = 'unsupported';
+        text = `No comparative verb present — this argument lacks textual evidence.`;
+      } else if (adv.raw_strength < 0.3) {
+        flag = 'weak';
+        text = `Only marginal signal; not enough to overcome the priors.`;
+      }
+      if (flag) attacks.push({ label: adv.label, attack: text, flag });
+    }
+
+    let examinerTokens = 0;
+    if (attacks.length > 0) {
+      // Refine attacks with a real LLM critique
+      const critSys = 'You are a Cross-Examiner attacking weak citation-intent arguments. '
+                    + 'Given a paragraph and one weak argument, write a SHORT (< 25 words) sharp rebuttal.';
+      try {
+        // batch — one call covers all flagged attacks
+        const critUser = `Paragraph: "${caseInput.paragraph}"\n\n`
+                       + `Cited: ${caseInput.ref_clean_citation}\n\n`
+                       + `Weak arguments to rebut:\n`
+                       + attacks.map((a, i) => `${i + 1}. [${a.label}] ${a.attack}`).join('\n')
+                       + `\n\nReturn a numbered rebuttal list, one short sentence each.`;
+        const r = await callLLM(config.provider, config.apiKey, config.model || defaultModelFor(config.provider),
+                                critSys, critUser, 220);
+        const lines = (r.text || '').split('\n').filter(l => /^\d/.test(l.trim()));
+        for (let i = 0; i < attacks.length && i < lines.length; i++) {
+          attacks[i].attack = lines[i].replace(/^\d+\.\s*/, '').trim() || attacks[i].attack;
+        }
+        examinerTokens = r.tokens;
+      } catch (e) { /* keep rule-based attacks */ }
+    }
+
+    let atkT = 0;
+    if (attacks.length === 0) {
+      examinerActions.push({ t: 0, type: 'say', actor: 'examiner',
+        text: 'No advocate argument fails the contradiction filter.' });
+    } else {
+      for (const atk of attacks) {
+        examinerActions.push({ t: atkT, type: 'attack', label: atk.label,
+                               text: atk.attack, flag: atk.flag });
+        atkT += 1400;
+      }
+    }
+    const examinerStage = {
+      id: 'examiner', name: 'Cross-Examiner', engine: 'RULE+LLM',
+      tools_called: ['contradiction_pattern', ...(attacks.length ? ['llm_critic'] : [])],
+      duration_ms: +(performance.now() - t3).toFixed(1),
+      tokens: examinerTokens, llm_calls: attacks.length ? 1 : 0,
+      outputs: { attacks }, actions: examinerActions,
+    };
+    trace.stages.push(examinerStage);
+    report(examinerStage);
+
+    // ─── Stage 5: Fact-Checker (LOCAL, no LLM) ──────────────
+    const t4 = performance.now();
+    const verifications = [];
+    let verT = 0;
+    const factActions = [];
+    for (const adv of advocates) {
+      for (const ev of adv.evidence_spans) {
+        const exact = exactSpanMatch(ev.span, caseInput.paragraph);
+        const bleu  = +bleuOverlap(ev.span, caseInput.paragraph).toFixed(2);
+        const verified = exact || bleu >= 0.85;
+        verifications.push({ label: adv.label, span: ev.span,
+                             exact_match: exact, bleu, verified });
+        const short = ev.span.length > 80 ? ev.span.slice(0, 80) + '…' : ev.span;
+        factActions.push({ t: verT, type: 'verify', label: adv.label, span: short,
+                           verified, exact, bleu });
+        verT += 420;
+      }
+    }
+    if (factActions.length === 0) {
+      factActions.push({ t: 0, type: 'say', actor: 'factchecker',
+        text: 'No quoted spans to verify (advocates argued without direct quotes).' });
+    }
+    const factStage = {
+      id: 'fact_checker', name: 'Fact-Checker', engine: 'RULE+NLI',
+      tools_called: ['exact_span_match', 'bleu_overlap'],
+      duration_ms: +(performance.now() - t4).toFixed(1),
+      tokens: 0, llm_calls: 0,
+      outputs: { verifications }, actions: factActions,
+    };
+    trace.stages.push(factStage);
+    report(factStage);
+
+    // ─── Stage 6: Judge (REAL LLM, one call) ────────────────
+    const t5 = performance.now();
+    const verifiedCount = {};
+    for (const v of verifications) if (v.verified)
+      verifiedCount[v.label] = (verifiedCount[v.label] || 0) + 1;
+    const attacksByLabel = {};
+    for (const a of attacks) attacksByLabel[a.label] = a;
+
+    const scores = {};
+    for (const adv of advocates) {
+      let s = adv.raw_strength + 0.5 * (verifiedCount[adv.label] || 0);
+      if (attacksByLabel[adv.label]) {
+        const pen = { contradicted: 1.5, unsupported: 1.2, weak: 0.7 }[attacksByLabel[adv.label].flag] || 0.5;
+        s -= pen;
+      }
+      s += triage.probs[adv.label] || 0;
+      scores[adv.label] = +Math.max(s, 0.02).toFixed(3);
+    }
+    // softmax
+    const expS = {}; let Z = 0;
+    for (const [k, v] of Object.entries(scores)) { expS[k] = Math.exp(v); Z += expS[k]; }
+    const probs = {};
+    for (const [k, v] of Object.entries(expS)) probs[k] = +(v / Z).toFixed(3);
+    const sortedFinal = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+    const winner = sortedFinal[0][0];
+    const margin = +(sortedFinal[0][1] - (sortedFinal[1]?.[1] ?? 0)).toFixed(3);
+    const confidence = probs[winner];
+    const abstain = confidence < 0.55;
+
+    // LLM arbitration (optional, but spends 1 call)
+    let judgeTokens = 0;
+    try {
+      const judgeSys = 'You are an impartial Judge ratifying a citation-intent verdict. '
+                     + 'Briefly (< 25 words) confirm or qualify the verdict given the evidence.';
+      const judgeUser =
+        `Paragraph: "${caseInput.paragraph}"\n\nVerdict: ${winner} (conf ${(confidence*100).toFixed(0)}%).\n`
+        + `Verified evidence count: ${Object.entries(verifiedCount).map(([l,n])=>`${l}: ${n}`).join(', ') || 'none'}.\n`
+        + 'Confirm or qualify in one short sentence.';
+      const r = await callLLM(config.provider, config.apiKey, config.model || defaultModelFor(config.provider),
+                              judgeSys, judgeUser, 100);
+      judgeTokens = r.tokens;
+    } catch (e) { /* judge call optional */ }
+
+    const judgeStage = {
+      id: 'judge', name: 'Judge', engine: 'LLM+CAL',
+      tools_called: ['llm_arbitrator', 'platt_calibrator'],
+      duration_ms: +(performance.now() - t5).toFixed(1),
+      tokens: judgeTokens, llm_calls: 1,
+      outputs: { label: winner, confidence, margin, scores, probs, abstain },
+      actions: [
+        { t: 0,    type: 'say',    actor: 'judge', text: 'Weighing arguments and verified evidence.' },
+        { t: 700,  type: 'scores', scores, probs },
+        { t: 1400, type: 'verdict', label: winner, confidence, margin, abstain },
+        { t: 1700, type: 'say',    actor: 'judge',
+          text: `Verdict: ${winner}  ·  conf ${confidence.toFixed(2)}  ·  margin ${margin.toFixed(2)}`
+                + (abstain ? '  ·  ABSTAINED' : '') },
+      ],
+    };
+    trace.stages.push(judgeStage);
+    report(judgeStage);
+
+    // ─── Stage 7: Clerk (LOCAL) ─────────────────────────────
+    const verified = verifications.filter(v => v.label === winner && v.verified);
+    const rejected = [];
+    for (const adv of advocates) {
+      if (adv.label === winner) continue;
+      const atk = attacksByLabel[adv.label];
+      rejected.push({ label: adv.label,
+                      reason: atk ? atk.attack
+                                  : `lower posterior than winner (${(probs[adv.label] || 0).toFixed(2)})` });
+    }
+    const artifact = {
+      case_id: caseInput.case_id,
+      label: winner,
+      confidence, margin, abstain,
+      evidence: verified.map(v => ({ span: v.span, verified: true,
+                                     method: v.exact_match ? 'exact' : 'bleu' })),
+      rejected_alternatives: rejected,
+      ground_truth: caseInput.ground_truth || null,
+    };
+    const clerkStage = {
+      id: 'clerk', name: 'Clerk', engine: 'CODE',
+      tools_called: [], duration_ms: 1,
+      tokens: 0, llm_calls: 0,
+      outputs: { artifact },
+      actions: [
+        { t: 0,    type: 'say', actor: 'clerk', text: 'Sealing the case file.' },
+        { t: 500,  type: 'show_artifact', artifact },
+        { t: 1300, type: 'say', actor: 'clerk', text: 'Annotation artifact filed.' },
+      ],
+    };
+    trace.stages.push(clerkStage);
+    report(clerkStage);
+
+    trace.final_artifact = artifact;
+    trace.summary = {
+      total_duration_ms: trace.stages.reduce((a, s) => a + s.duration_ms, 0),
+      total_tokens:      trace.stages.reduce((a, s) => a + (s.tokens     || 0), 0),
+      tools_invoked:     trace.stages.reduce((a, s) => a + s.tools_called.length, 0),
+      llm_calls:         trace.stages.reduce((a, s) => a + (s.llm_calls  || 0), 0),
+      ground_truth_match: artifact.label === caseInput.ground_truth,
+    };
+    return trace;
+  }
+
+  // ───────────────────────────────────────────────────────────
+  //  Public API
+  // ───────────────────────────────────────────────────────────
+  return {
+    PROVIDERS,
+    defaultModelFor,
+    runCase,
+  };
+
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   JUROR · Workflow Demo · animation engine
+   Plays back a JSON trace produced by ../prototype/juror.py as a
+   left → right pipeline.  Four fixed intent lanes, one per intent.
+   ═══════════════════════════════════════════════════════════════ */
+
+const STAGE_BUFFER_MS = 700;       // pause between stages
+
+// fixed mapping: each intent owns one lane (one sub-agent per intent)
+const INTENT_SLOT = {
+  'Background':      'BG',
+  'Technical basis': 'TB',
+  'Comparison':      'CP',
+  'Fundamental idea':'FI',
+};
+const ALL_SLOTS = ['BG', 'TB', 'CP', 'FI'];
+const SAY_STATIONS = ['triage', 'investigator', 'examiner', 'factchecker', 'judge', 'clerk'];
+function slotOf(label) { return INTENT_SLOT[label] || null; }
+
+// ---------------------------------------------------------------
+//  Engine type helper
+// ---------------------------------------------------------------
+function engineChip(engine) {
+  if (!engine) return '';
+  const key = engine.toLowerCase();
+  const classes = [];
+  if (key.includes('ml'))    classes.push('ml');
+  if (key.includes('rule'))  classes.push('rule');
+  if (key.includes('graph')) classes.push('graph');
+  if (key.includes('nli'))   classes.push('nli');
+  if (key.includes('llm'))   classes.push('llm');
+  if (key.includes('code') || key.includes('cal')) classes.push('code');
+  const cls = classes.length ? classes[0] : 'code';
+  return `<span class="engine-chip ${cls}">${engine}</span>`;
+}
+
+// ---------------------------------------------------------------
+//  Main player
+// ---------------------------------------------------------------
+class JurorPlayer {
+  constructor() {
+    this.trace = null;
+    this.flat = [];           // flattened actions with globalT
+    this.idx  = 0;
+    this.elapsedMs = 0;
+    this.playing = false;
+    this.lastFrame = null;
+    this.speed = 1;
+    this.cumLLMCalls = 0;
+    this.cumTokens   = 0;
+    this.cumTools    = 0;
+
+    this.actors = ['triage', 'investigator',
+                   'adv-BG', 'adv-TB', 'adv-CP', 'adv-FI',
+                   'examiner', 'factchecker', 'judge', 'clerk'];
+  }
+
+  async loadCase(n) {
+    this.stop();
+    this.reset();
+    const trace = (window.JUROR_TRACES || {})[n];
+    if (!trace) {
+      this.showError('Embedded trace not found for case ' + n);
+      return;
+    }
+    // Deep copy so resets / re-plays start from a clean state.
+    this.trace = JSON.parse(JSON.stringify(trace));
+    this.bindCaseInfo();
+    this.flatten();
+    this.updateClockTotal();
+  }
+
+  reset() {
+    this.idx = 0;
+    this.elapsedMs = 0;
+    this.lastFrame = null;
+    this.cumLLMCalls = 0;
+    this.cumTokens = 0;
+    this.cumTools = 0;
+
+    // clear actors (stations + intent lanes)
+    for (const a of this.actors) {
+      const el = document.getElementById('actor-' + a);
+      if (!el) continue;
+      el.classList.remove('active', 'dim', 'winner');
+      el.style.opacity = '';
+      const strike = el.querySelector('.strike-overlay');
+      if (strike) strike.classList.remove('show');
+      el.querySelectorAll('.stamp').forEach(s => s.remove());
+    }
+    // clear intent-lane arguments + strength chips
+    ALL_SLOTS.forEach(s => {
+      const arg = document.getElementById('arg-' + s);
+      if (arg) { arg.textContent = ''; arg.classList.remove('show'); }
+      const str = document.getElementById('str-' + s);
+      if (str) { str.textContent = ''; str.classList.remove('show'); }
+    });
+    // clear station status lines
+    SAY_STATIONS.forEach(k => {
+      const s = document.getElementById('say-' + k);
+      if (s) { s.textContent = ''; s.classList.remove('show'); }
+    });
+    const panelFrame = document.getElementById('station-panel');
+    if (panelFrame) panelFrame.classList.remove('active', 'dim');
+    document.querySelectorAll('.flow-arrow').forEach(ar => ar.classList.remove('lit', 'next'));
+
+    // clear transcript
+    document.getElementById('transcript-log').innerHTML = '';
+
+    // meters
+    this.setMeter('engine', '—');
+    this.setMeter('tools', '0');
+    this.setMeter('llm', '0');
+    this.setMeter('tokens', '0');
+    this.setMeter('stage', '—');
+    const verdict = document.getElementById('m-verdict');
+    verdict.textContent = 'pending…';
+    verdict.classList.remove('final', 'abstain');
+
+    document.getElementById('artifact-drawer').classList.add('hidden');
+    document.getElementById('clock').textContent = '00:00.0';
+
+    this.unsetButtons();
+  }
+
+  bindCaseInfo() {
+    document.getElementById('case-id').textContent       = this.trace.case_id;
+    document.getElementById('case-ref').textContent      = this.trace.input.cited_ref;
+    document.getElementById('case-gt').textContent       = this.trace.input.ground_truth || '—';
+    document.getElementById('case-paragraph').textContent= '"' + this.trace.input.paragraph + '"';
+  }
+
+  flatten() {
+    // give each action a global timeline timestamp
+    this.flat = [];
+    let stageStart = 0;
+    for (const stage of this.trace.stages) {
+      // stage entry pseudo-action (lights up the actor + updates meters)
+      this.flat.push({
+        globalT: stageStart,
+        type: '_enter_stage',
+        stageId: stage.id,
+        stageName: stage.name,
+        engine: stage.engine,
+      });
+      if (stage.id === 'panel') {
+        this.flat.push({
+          globalT: stageStart + 10,
+          type: '_setup_advocates',
+          advocates: stage.outputs.advocates,
+        });
+      }
+
+      for (const action of stage.actions) {
+        this.flat.push({
+          globalT: stageStart + action.t,
+          stageId: stage.id,
+          stageEngine: stage.engine,
+          ...action,
+        });
+      }
+
+      // stage exit
+      const maxT = stage.actions.length
+        ? Math.max(...stage.actions.map(a => a.t))
+        : 0;
+      this.flat.push({
+        globalT: stageStart + maxT + 200,
+        type: '_exit_stage',
+        stageId: stage.id,
+        tools: stage.tools_called.length,
+        tokens: stage.tokens,
+        llmCalls: stage.llm_calls,
+      });
+      stageStart += maxT + STAGE_BUFFER_MS;
+    }
+    this.totalMs = stageStart;
+  }
+
+  // ---------------------------------------------------------------
+  //  Playback loop
+  // ---------------------------------------------------------------
+  play() {
+    if (!this.trace) return;
+    if (this.idx >= this.flat.length) this.reset();
+    this.playing = true;
+    this.setButtons();
+    this.lastFrame = null;
+    requestAnimationFrame(this.loop.bind(this));
+  }
+  pause() {
+    this.playing = false;
+    this.lastFrame = null;
+    this.unsetButtons();
+  }
+  stop() { this.pause(); }
+
+  loop(ts) {
+    if (!this.playing) return;
+    if (this.lastFrame === null) this.lastFrame = ts;
+    this.elapsedMs += (ts - this.lastFrame) * this.speed;
+    this.lastFrame = ts;
+
+    // fire all due actions
+    while (this.idx < this.flat.length && this.flat[this.idx].globalT <= this.elapsedMs) {
+      this.fireAction(this.flat[this.idx]);
+      this.idx++;
+    }
+
+    document.getElementById('clock').textContent = this.formatTime(this.elapsedMs);
+
+    if (this.idx >= this.flat.length) {
+      this.playing = false;
+      this.unsetButtons();
+      return;
+    }
+    requestAnimationFrame(this.loop.bind(this));
+  }
+
+  // ---------------------------------------------------------------
+  //  Action dispatcher
+  // ---------------------------------------------------------------
+  fireAction(a) {
+    switch (a.type) {
+      case '_enter_stage':     return this.enterStage(a);
+      case '_exit_stage':      return this.exitStage(a);
+      case '_setup_advocates': return this.setupAdvocates(a);
+      case 'say':              return this.act_say(a);
+      case 'tool_call':        return this.act_tool(a);
+      case 'shortlist':        return this.act_shortlist(a);
+      case 'advocate_speak':   return this.act_advocateSpeak(a);
+      case 'attack':           return this.act_attack(a);
+      case 'verify':           return this.act_verify(a);
+      case 'scores':           return this.act_scores(a);
+      case 'verdict':          return this.act_verdict(a);
+      case 'show_artifact':    return this.act_showArtifact(a);
+      default:
+        console.warn('unknown action type', a.type, a);
+    }
+  }
+
+  // -------- stage lights --------
+  enterStage(a) {
+    this._stageLLMSeen = 0;
+    // dim everyone, hide every station status line
+    for (const id of this.actors) {
+      const el = document.getElementById('actor-' + id);
+      if (el) { el.classList.remove('active'); el.classList.add('dim'); }
+    }
+    SAY_STATIONS.forEach(k => {
+      const s = document.getElementById('say-' + k);
+      if (s) s.classList.remove('show');
+    });
+    const panelFrame = document.getElementById('station-panel');
+    if (panelFrame) panelFrame.classList.remove('active');
+
+    let owner;
+    switch (a.stageId) {
+      case 'triage':       owner = 'triage'; break;
+      case 'investigator': owner = 'investigator'; break;
+      case 'panel':        owner = null; break;       // handled per-advocate
+      case 'examiner':     owner = 'examiner'; break;
+      case 'fact_checker': owner = 'factchecker'; break;
+      case 'judge':        owner = 'judge'; break;
+      case 'clerk':        owner = 'clerk'; break;
+    }
+    if (owner) {
+      const el = document.getElementById('actor-' + owner);
+      if (el) { el.classList.add('active'); el.classList.remove('dim'); }
+    } else if (a.stageId === 'panel') {
+      if (panelFrame) panelFrame.classList.add('active');
+      // bring all four intent lanes up to base visibility
+      ALL_SLOTS.forEach(s => {
+        const el = document.getElementById('actor-adv-' + s);
+        if (el) el.classList.remove('dim');
+      });
+    }
+    // light the pipeline up to (and pulsing into) the current stage
+    const order = { triage: 0, investigator: 1, panel: 2, examiner: 3,
+                    fact_checker: 4, judge: 5, clerk: 6 };
+    const here = order[a.stageId] ?? 0;
+    document.querySelectorAll('.flow-arrow').forEach((ar, i) => {
+      ar.classList.toggle('lit', i < here);
+      ar.classList.toggle('next', i === here - 1);
+    });
+
+    this.setMeter('engine', a.engine);
+    this.setMeter('stage', a.stageName);
+    this.appendLog('system', '──── ' + a.stageName + ' ' + engineChip(a.engine) + ' ────', {asHtml: true});
+  }
+
+  exitStage(a) {
+    // Reconcile per-stage LLM and token counts with the trace metadata.
+    const expectedLLM = a.llmCalls || 0;
+    const seenLLM = this._stageLLMSeen || 0;
+    if (expectedLLM > seenLLM) {
+      const diff = expectedLLM - seenLLM;
+      this.cumLLMCalls += diff;
+      this.setMeter('llm', this.cumLLMCalls);
+      this.flashMeter('m-llm');
+    }
+    if (a.tokens > 0) {
+      this.cumTokens += a.tokens;
+      this.setMeter('tokens', this.cumTokens);
+      this.flashMeter('m-tokens');
+    }
+    this._stageLLMSeen = 0;
+  }
+
+  setupAdvocates(a) {
+    // intent lanes are static; just make sure their argument lines start empty
+    ALL_SLOTS.forEach(s => {
+      const arg = document.getElementById('arg-' + s);
+      if (arg) { arg.textContent = ''; arg.classList.remove('show'); }
+      const str = document.getElementById('str-' + s);
+      if (str) { str.textContent = ''; str.classList.remove('show'); }
+    });
+  }
+
+  // -------- speech (inline station status line) --------
+  act_say(a) {
+    if (SAY_STATIONS.includes(a.actor)) {
+      this.showSay(a.actor, a.text);
+    }
+    this.appendLog(a.actor, a.text);
+  }
+
+  // -------- tool call --------
+  act_tool(a) {
+    this.cumTools++;
+    this.setMeter('tools', this.cumTools);
+    const isLLM = (a.engine || '').toUpperCase() === 'LLM';
+    if (isLLM) {
+      this._stageLLMSeen = (this._stageLLMSeen || 0) + 1;
+      this.cumLLMCalls++;
+      this.setMeter('llm', this.cumLLMCalls);
+      this.flashMeter('m-llm');
+    }
+    const msg = `<code>${a.tool}</code> → ${a.summary || 'ok'}`;
+    this.appendLog('tool', msg + ' ' + engineChip(a.engine), {asHtml: true});
+  }
+
+  // -------- panel convened --------
+  act_shortlist(a) {
+    this.appendLog('system',
+      'Panel convened · one advocate per intent: <b>' + a.value.join(', ') + '</b>'
+      + (a.fast_track ? ' <span style="color:#4ADE80">[fast-track candidate]</span>' : ''),
+      {asHtml: true});
+  }
+
+  // -------- advocate speaks (fills its own intent lane) --------
+  act_advocateSpeak(a) {
+    const slot = slotOf(a.label);
+    if (!slot) return;
+    // highlight the speaking lane; others fall back to base visibility
+    ALL_SLOTS.forEach(s => {
+      const el = document.getElementById('actor-adv-' + s);
+      if (!el) return;
+      if (s === slot) { el.classList.add('active'); el.classList.remove('dim'); }
+      else            { el.classList.remove('active'); el.classList.remove('dim'); }
+    });
+    const arg = document.getElementById('arg-' + slot);
+    if (arg) { arg.textContent = a.text; arg.classList.add('show'); }
+    const str = document.getElementById('str-' + slot);
+    if (str && a.strength !== undefined) {
+      str.textContent = 'raw strength ' + a.strength;
+      str.classList.add('show');
+    }
+    this.appendLog('advocate', `<b>${a.label}</b>: ${a.text}`, {asHtml: true});
+  }
+
+  // -------- attack from cross-examiner --------
+  act_attack(a) {
+    const slot = slotOf(a.label);
+    if (slot) {
+      const card = document.getElementById('actor-adv-' + slot);
+      if (card) {
+        const strike = card.querySelector('.strike-overlay');
+        if (strike) strike.classList.add('show');
+        card.classList.add('dim');
+      }
+    }
+    this.showSay('examiner', a.text);
+    const el = document.getElementById('actor-examiner');
+    if (el) { el.classList.add('active'); el.classList.remove('dim'); }
+    this.appendLog('examiner',
+      `attack <b>${a.label}</b>: ${a.text} <span class="engine-chip rule">${a.flag || 'flagged'}</span>`,
+      {asHtml: true});
+  }
+
+  // -------- fact-checker verify (stamp on the lane) --------
+  act_verify(a) {
+    const slot = slotOf(a.label);
+    if (slot) {
+      const card = document.getElementById('actor-adv-' + slot);
+      if (card) {
+        // bring the lane under inspection forward so its stamp reads clearly
+        card.classList.remove('dim');
+        this.stampOn(card, a.verified);
+      }
+    }
+    const fc = document.getElementById('actor-factchecker');
+    if (fc) { fc.classList.add('active'); fc.classList.remove('dim'); }
+    const passFail = a.verified
+      ? '<span class="verify-pass">✓ verified</span>'
+      : '<span class="verify-fail">✗ unverified</span>';
+    const meta = a.exact ? 'exact match' : `bleu ${a.bleu}`;
+    this.appendLog('factchecker',
+      `${passFail} <b>[${a.label}]</b> &nbsp; <i>"${a.span}"</i> &nbsp;&nbsp; <span style="color:#9CA3AF">(${meta})</span>`,
+      {asHtml: true});
+  }
+
+  // -------- judge scores breakdown --------
+  act_scores(a) {
+    const rows = Object.entries(a.probs)
+      .sort((x, y) => y[1] - x[1])
+      .map(([lbl, p]) => `<span style="display:inline-block;min-width:140px">${lbl}</span> ${'█'.repeat(Math.round(p * 20))} ${(p*100).toFixed(1)}%`);
+    this.appendLog('judge',
+      'Calibrated posterior:<br>' + rows.map(r => '&nbsp;&nbsp;' + r).join('<br>'),
+      {asHtml: true});
+  }
+
+  // -------- judge verdict --------
+  act_verdict(a) {
+    const slot = slotOf(a.label);
+    if (slot) {
+      const card = document.getElementById('actor-adv-' + slot);
+      if (card) { card.classList.add('winner'); card.classList.remove('dim'); }
+    }
+    // strike the losers
+    ALL_SLOTS.forEach(s => {
+      const card = document.getElementById('actor-adv-' + s);
+      if (card && !card.classList.contains('winner')) {
+        const strike = card.querySelector('.strike-overlay');
+        if (strike) strike.classList.add('show');
+        card.classList.add('dim');
+      }
+    });
+
+    const verdictEl = document.getElementById('m-verdict');
+    verdictEl.textContent = `${a.label}  ·  conf ${(a.confidence*100).toFixed(1)}%`;
+    verdictEl.classList.add('final');
+    if (a.abstain) verdictEl.classList.add('abstain');
+  }
+
+  // -------- clerk shows artifact --------
+  act_showArtifact(a) {
+    const drawer = document.getElementById('artifact-drawer');
+    const pre    = document.getElementById('artifact-json');
+    pre.textContent = JSON.stringify(a.artifact, null, 2);
+    drawer.classList.remove('hidden');
+    pre.scrollTop = 0;
+  }
+
+  // ---------------------------------------------------------------
+  //  Visual primitives
+  // ---------------------------------------------------------------
+  showSay(stationKey, text) {
+    const el = document.getElementById('say-' + stationKey);
+    if (!el) return;
+    el.textContent = text;
+    void el.offsetWidth;        // reflow so the transition runs
+    el.classList.add('show');
+  }
+
+  stampOn(card, verified) {
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp ' + (verified ? 'pass' : 'fail');
+    stamp.textContent = verified ? '✓ VERIFIED' : '✗ UNVERIFIED';
+    stamp.style.top  = '6px';
+    stamp.style.right = '6px';
+    card.appendChild(stamp);
+    setTimeout(() => stamp.remove(), 1700 / this.speed);
+  }
+
+  appendLog(actorClass, message, opts = {}) {
+    const log = document.getElementById('transcript-log');
+    const li = document.createElement('li');
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = this.formatTime(this.elapsedMs);
+    const tag = document.createElement('span');
+    tag.className = 'actor-tag ' + actorClass;
+    tag.textContent = actorClass.toUpperCase();
+    const msg = document.createElement('span');
+    msg.className = 'msg' + (actorClass === 'tool' ? ' tool' : '');
+    if (opts.asHtml) msg.innerHTML = message; else msg.textContent = message;
+
+    li.appendChild(ts);
+    li.appendChild(tag);
+    li.appendChild(msg);
+    log.appendChild(li);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  flashMeter(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.classList.add('active');
+    clearTimeout(el._flashTimer);
+    el._flashTimer = setTimeout(() => el.classList.remove('active'), 500);
+  }
+
+  setMeter(name, value) {
+    const map = { engine: 'm-engine', tools: 'm-tools', llm: 'm-llm',
+                  tokens: 'm-tokens', stage: 'm-stage' };
+    const el = document.getElementById(map[name]);
+    if (el) el.textContent = value;
+  }
+
+  formatTime(ms) {
+    const s = ms / 1000;
+    const mm = Math.floor(s / 60);
+    const ss = (s - mm * 60).toFixed(1);
+    return `${String(mm).padStart(2,'0')}:${String(ss).padStart(4,'0')}`;
+  }
+
+  updateClockTotal() { /* hook for showing total length if desired */ }
+
+  setButtons()   {
+    document.getElementById('btn-play').disabled = true;
+    document.getElementById('btn-pause').disabled = false;
+  }
+  unsetButtons() {
+    document.getElementById('btn-play').disabled = false;
+    document.getElementById('btn-pause').disabled = true;
+  }
+
+  showError(html) {
+    const para = document.getElementById('case-paragraph');
+    para.innerHTML = `<div class="error-banner">${html}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Live-mode glue
+// ═══════════════════════════════════════════════════════════════
+const liveState = {
+  mode:           'demo',          // 'demo' | 'live'
+  provider:       'anthropic',
+  apiKey:         '',
+  model:          '',
+  // Server-real mode wires the UI to a FastAPI backend that runs the agent
+  // with real trained models (LR triage, NLI fact-checker).  Detected at
+  // boot by GET-ing /api/status on the same origin.
+  serverReady:    false,
+  serverStatus:   null,             // last /api/status payload
+  preferServer:   true,             // user can disable to force in-browser mode
+};
+
+// Built-in sample inputs (in case the user wants Live without an existing trace)
+const LIVE_CASES = {
+  1: {
+    case_id: 'ID_183878',
+    paragraph:
+      'In general, simultaneous confidence bands for a function f are constructed ' +
+      'by studying the asymptotic distribution of the sup. The approach of ' +
+      'Bickel and Rosenblatt (1973) relates this to a study of the distribution ' +
+      'of a Gaussian process. This approach to constructing confidence bands has ' +
+      'been used in the context of nonparametric estimation by, among others, ' +
+      'Hardle (1989) for M-estimators and Claeskens and Van Keilegom (2003) for ' +
+      'local polynomial likelihood estimators.',
+    ref_clean_citation: 'Hardle (1989)',
+    ground_truth: 'Background',
+  },
+  2: {
+    case_id: 'ID_99812',
+    paragraph:
+      'We follow the boosting framework of Buehlmann and Hothorn (2007), in which ' +
+      'regularization is achieved indirectly via the application of penalized ' +
+      'base learners. We extend their componentwise gradient boosting to handle ' +
+      'conditional transformation models, but the iterative scheme and the ' +
+      'stopping criterion remain as in the original work.',
+    ref_clean_citation: 'Buehlmann and Hothorn (2007)',
+    ground_truth: 'Technical basis',
+  },
+  3: {
+    case_id: 'ID_77541',
+    paragraph:
+      'Our proposed kernel estimator achieves a parametric rate of convergence ' +
+      'on subsets, which is faster than the non-parametric rate reported by ' +
+      'Yao et al. (2005) under the sparsely observed regime. In contrast to ' +
+      'their approach, our method does not require functional principal ' +
+      'component analysis as a preprocessing step.',
+    ref_clean_citation: 'Yao et al. (2005)',
+    ground_truth: 'Comparison',
+  },
+};
+
+function setApiStatus(level, text) {
+  const dot = document.querySelector('#api-status .status-dot');
+  const txt = document.getElementById('api-status-text');
+  if (dot) { dot.className = 'status-dot ' + level; }
+  if (txt) { txt.textContent = text; }
+}
+
+function applyMode(mode) {
+  liveState.mode = mode;
+  document.querySelectorAll('.mode-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  if (mode === 'live' && !liveState.apiKey) {
+    document.getElementById('api-drawer').classList.add('open');
+  }
+}
+
+async function probeServer() {
+  // Try GET /api/status on the same origin; flip serverReady accordingly.
+  try {
+    const resp = await fetch('/api/status', { method: 'GET' });
+    if (!resp.ok) throw new Error('status ' + resp.status);
+    const j = await resp.json();
+    liveState.serverReady  = true;
+    liveState.serverStatus = j;
+    return j;
+  } catch (e) {
+    liveState.serverReady  = false;
+    liveState.serverStatus = null;
+    return null;
+  }
+}
+
+function describeServerStatus(j) {
+  if (!j) return 'Server not detected · running in-browser mode.';
+  const trAcc   = j.triage?.metrics?.accuracy;
+  const trMsg   = j.triage?.ready
+    ? `Triage = real TF-IDF + LR (held-out acc ${trAcc ?? '?'})`
+    : 'Triage NOT loaded';
+  const nliMsg  = j.fact_checker?.nli_available
+    ? `NLI = ${j.fact_checker.model}`
+    : 'NLI = BLEU fallback';
+  const provOk  = Object.entries(j.llm_providers || {}).filter(([, v]) => v).map(([k]) => k);
+  const provMsg = provOk.length
+    ? `LLM keys ready: ${provOk.join(', ')}`
+    : 'No LLM keys configured on server — set provider env vars.';
+  return `${trMsg} · ${nliMsg} · ${provMsg}`;
+}
+
+async function runViaServer(caseInput, providerName) {
+  const resp = await fetch('/api/run-case', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ case: caseInput, provider: providerName }),
+  });
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`server /api/run-case → ${resp.status}: ${body.slice(0, 200)}`);
+  }
+  return await resp.json();
+}
+
+async function runLiveCase(caseNum) {
+  const caseInput = LIVE_CASES[caseNum];
+  player.pause(); player.reset();
+  document.getElementById('btn-play').disabled = true;
+
+  // 1) Server-real path (preferred) ────────────────────────────────
+  if (liveState.preferServer && liveState.serverReady) {
+    const provider = liveState.provider;
+    const provOk   = liveState.serverStatus?.llm_providers?.[provider];
+    if (!provOk) {
+      setApiStatus('error',
+        `Server has no key configured for '${provider}'. Ask the engineer to set the env var, or switch provider.`);
+      document.getElementById('btn-play').disabled = false;
+      return;
+    }
+    setApiStatus('ok',
+      `Server mode · calling ${provider} on the backend (real TF-IDF + NLI + LLM)…`);
+    try {
+      const trace = await runViaServer(caseInput, provider);
+      setApiStatus('ok',
+        `Server run complete · ${trace.summary.llm_calls} LLM calls · ${trace.summary.total_tokens} tokens.`);
+      player.trace = trace;
+      player.bindCaseInfo();
+      player.flatten();
+      player.idx = 0; player.elapsedMs = 0;
+      player.play();
+    } catch (e) {
+      setApiStatus('error', `Server run failed: ${e.message.slice(0, 160)}`);
+    } finally {
+      document.getElementById('btn-play').disabled = false;
+    }
+    return;
+  }
+
+  // 2) In-browser fallback path ────────────────────────────────────
+  if (!window.JUROR_LIVE) {
+    setApiStatus('error', 'Live agent module failed to load.');
+    document.getElementById('btn-play').disabled = false;
+    return;
+  }
+  if (!liveState.apiKey) {
+    setApiStatus('error',
+      'No backend detected and no browser API key set. Either deploy the server or paste a key above.');
+    document.getElementById('api-drawer').classList.add('open');
+    document.getElementById('btn-play').disabled = false;
+    return;
+  }
+  setApiStatus('ok',
+    `Browser mode · calling ${liveState.provider} directly from your browser…`);
+  try {
+    const trace = await window.JUROR_LIVE.runCase({
+      caseInput,
+      config: { provider: liveState.provider, apiKey: liveState.apiKey, model: liveState.model },
+    });
+    setApiStatus('ok',
+      `Browser run complete · ${trace.summary.llm_calls} LLM calls · ${trace.summary.total_tokens} tokens.`);
+    player.trace = trace;
+    player.bindCaseInfo();
+    player.flatten();
+    player.idx = 0; player.elapsedMs = 0;
+    player.play();
+  } catch (e) {
+    setApiStatus('error', `Browser run failed: ${e.message.slice(0, 160)}`);
+  } finally {
+    document.getElementById('btn-play').disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Wire up UI
+// ═══════════════════════════════════════════════════════════════
+const player = new JurorPlayer();
+
+document.addEventListener('DOMContentLoaded', async () => {
+  player.loadCase(1);
+
+  // Detect whether a real server is reachable on the same origin.
+  // If yes — Live mode prefers the server (real TF-IDF + NLI + LLM).
+  // If no  — Live mode falls back to in-browser direct calls.
+  const status = await probeServer();
+  if (status && status.triage?.ready) {
+    setApiStatus('ok', describeServerStatus(status));
+    // Toggle the Live label to make it clear this isn't a stub
+    const liveBtn = document.querySelector('.mode-opt[data-mode="live"]');
+    if (liveBtn) liveBtn.innerHTML =
+      '<span class="mode-dot live-dot"></span> Live <span class="badge-no-llm" style="margin-left:6px">server</span>';
+  } else {
+    setApiStatus('pending',
+      'No backend detected on this origin. Live mode will run in-browser using the key you paste below.');
+  }
+
+  // ─── Play / Pause / Restart ───
+  document.getElementById('btn-play').addEventListener('click', () => {
+    if (liveState.mode === 'live') {
+      const active = document.querySelector('.case-btn.active');
+      const n = parseInt(active?.dataset?.case || '1');
+      runLiveCase(n);
+    } else {
+      player.play();
+    }
+  });
+  document.getElementById('btn-pause').addEventListener('click', () => player.pause());
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    player.pause(); player.reset();
+  });
+
+  // ─── Speed ───
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      player.speed = parseFloat(btn.dataset.speed);
+    });
+  });
+
+  // ─── Case selector ───
+  document.querySelectorAll('.case-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (liveState.mode === 'demo') {
+        await player.loadCase(parseInt(btn.dataset.case));
+      } else {
+        // bind case info without playing — Run triggers the live call
+        const c = LIVE_CASES[parseInt(btn.dataset.case)];
+        player.reset();
+        player.trace = { case_id: c.case_id,
+                         input: { paragraph: c.paragraph, cited_ref: c.ref_clean_citation,
+                                  ground_truth: c.ground_truth } };
+        player.bindCaseInfo();
+      }
+    });
+  });
+
+  // ─── Mode switch ───
+  document.querySelectorAll('.mode-opt').forEach(btn => {
+    btn.addEventListener('click', () => applyMode(btn.dataset.mode));
+  });
+
+  // ─── Settings drawer toggle ───
+  const drawer = document.getElementById('api-drawer');
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    drawer.classList.toggle('open');
+  });
+
+  // ─── Provider selector ───
+  const modelInput = document.getElementById('api-model-input');
+  document.querySelectorAll('.prov-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.prov-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      liveState.provider = btn.dataset.provider;
+      if (window.JUROR_LIVE) {
+        const model = window.JUROR_LIVE.defaultModelFor(liveState.provider);
+        modelInput.placeholder = model;
+        if (!modelInput.value) modelInput.value = model;
+      }
+    });
+  });
+  // initialize default model
+  if (window.JUROR_LIVE) {
+    modelInput.placeholder = window.JUROR_LIVE.defaultModelFor(liveState.provider);
+    modelInput.value       = window.JUROR_LIVE.defaultModelFor(liveState.provider);
+  }
+
+  // ─── Activate key ───
+  document.getElementById('btn-save-key').addEventListener('click', () => {
+    const key   = document.getElementById('api-key-input').value.trim();
+    const model = modelInput.value.trim();
+    if (!key) {
+      setApiStatus('error', 'Paste an API key above first.');
+      return;
+    }
+    liveState.apiKey = key;
+    liveState.model  = model || window.JUROR_LIVE.defaultModelFor(liveState.provider);
+    // wipe the password field so it isn't sitting in the DOM after activation
+    document.getElementById('api-key-input').value = '';
+    setApiStatus('ok',
+      `Key active for ${liveState.provider} / ${liveState.model}. Click Run to make real LLM calls.`);
+    applyMode('live');
+  });
+
+  // ─── Keyboard shortcuts ───
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === ' ' || e.key === 'k') {
+      e.preventDefault();
+      if (liveState.mode === 'live') {
+        document.getElementById('btn-play').click();
+      } else {
+        player.playing ? player.pause() : player.play();
+      }
+    } else if (e.key === 'r') {
+      player.pause(); player.reset();
+    } else if (e.key === '1' || e.key === '2' || e.key === '3') {
+      document.querySelector(`.case-btn[data-case="${e.key}"]`).click();
+    }
+  });
+});
+
+</script>
+</body>
+</html>

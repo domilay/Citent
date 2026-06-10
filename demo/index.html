@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUROR — Schema-Pluggable Annotation Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="aurora">
+  <div class="aurora-blob blob-1"></div>
+  <div class="aurora-blob blob-2"></div>
+  <div class="aurora-blob blob-3"></div>
+</div>
+
+<div id="app">
+
+  <!-- ════════ TOP NAV ════════ -->
+  <header class="topnav">
+    <div class="brand">
+      <div class="logo-mark">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2 L28 10 L28 22 L16 30 L4 22 L4 10 Z" stroke="url(#brand-grad)" stroke-width="1.6" fill="none"/>
+          <path d="M16 9 L16 23 M10 16 L22 16" stroke="url(#brand-grad)" stroke-width="1.6" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#A78BFA"/>
+              <stop offset="100%" stop-color="#22D3EE"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">JUROR</div>
+        <div class="brand-tag">schema-pluggable annotation agent</div>
+      </div>
+    </div>
+
+    <nav class="mode-switch" id="mode-switch">
+      <button class="mode-opt active" data-mode="demo">
+        <span class="mode-dot demo-dot"></span> Demo
+      </button>
+      <button class="mode-opt" data-mode="live">
+        <span class="mode-dot live-dot"></span> Live
+      </button>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="nav-btn" id="btn-settings" aria-label="API settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+      <div class="award-chip">STAI-X 2026 · Award C</div>
+    </div>
+  </header>
+
+  <!-- ════════ API KEY DRAWER (hidden until Settings is clicked) ════════ -->
+  <section class="api-drawer" id="api-drawer">
+    <div class="api-drawer-inner">
+      <div class="api-row">
+        <div class="api-col">
+          <label class="api-label">Provider</label>
+          <div class="provider-grid">
+            <button class="prov-btn active" data-provider="anthropic">
+              <span class="prov-logo">●</span> Anthropic
+            </button>
+            <button class="prov-btn" data-provider="openai">
+              <span class="prov-logo">●</span> OpenAI
+            </button>
+            <button class="prov-btn" data-provider="google">
+              <span class="prov-logo">●</span> Google
+            </button>
+            <button class="prov-btn" data-provider="deepseek">
+              <span class="prov-logo">●</span> DeepSeek
+            </button>
+          </div>
+        </div>
+        <div class="api-col grow">
+          <label class="api-label">API key  <span class="hint">stored in this tab only · never sent anywhere except the provider</span></label>
+          <input type="password" id="api-key-input" class="api-input" placeholder="sk-ant-… / sk-… / AIza…">
+        </div>
+        <div class="api-col">
+          <label class="api-label">Model</label>
+          <input type="text" id="api-model-input" class="api-input" placeholder="claude-opus-4-6">
+        </div>
+        <div class="api-col">
+          <label class="api-label">&nbsp;</label>
+          <button id="btn-save-key" class="primary-btn">Activate Live</button>
+        </div>
+      </div>
+      <div class="api-status" id="api-status">
+        <span class="status-dot pending"></span>
+        <span id="api-status-text">No key set — running scripted demo trace.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ CASE BAR ════════ -->
+  <section class="casebar glass">
+    <div class="case-info">
+      <div class="case-meta">
+        <span class="lbl">CASE</span>
+        <span id="case-id" class="val">—</span>
+        <span class="lbl">REF</span>
+        <span id="case-ref" class="val ref">—</span>
+        <span class="lbl">GROUND&nbsp;TRUTH</span>
+        <span id="case-gt" class="val gt">—</span>
+      </div>
+      <p id="case-paragraph" class="case-paragraph">—</p>
+    </div>
+    <div class="case-selector">
+      <span class="lbl small">case</span>
+      <button class="case-btn active" data-case="1">01</button>
+      <button class="case-btn" data-case="2">02</button>
+      <button class="case-btn" data-case="3">03</button>
+    </div>
+  </section>
+
+  <!-- ════════ WORKFLOW STRIP (left → right) ════════ -->
+  <main class="workflow glass">
+
+    <!-- ① Triage -->
+    <div class="station actor triage" id="actor-triage">
+      <div class="step-no">01</div>
+      <div class="actor-icon">📋</div>
+      <div class="actor-name">Triage</div>
+      <div class="actor-engine">ML <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">ML gate · routes easy cases</div>
+      <div class="say" id="say-triage"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ② Investigator -->
+    <div class="station actor investigator" id="actor-investigator">
+      <div class="step-no">02</div>
+      <div class="actor-icon">🔍</div>
+      <div class="actor-name">Investigator</div>
+      <div class="actor-engine">RULE+ML+GRAPH</div>
+      <div class="actor-cap">gathers evidence, cheapest tools first</div>
+      <div class="say" id="say-investigator"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ③ Prosecution Panel -->
+    <div class="station panel-station" id="station-panel">
+      <div class="step-no">03</div>
+      <div class="panel-title">PROSECUTION PANEL</div>
+      <div class="panel-sub">one sub-agent per intent · <span class="badge-llm">LLM</span></div>
+
+      <div class="intent-lanes">
+        <div class="actor advocate" id="actor-adv-BG">
+          <div class="intent-name">Background</div>
+          <div class="intent-def">general context / situating prior work</div>
+          <div class="adv-arg" id="arg-BG"></div>
+          <div class="adv-strength" id="str-BG"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-TB">
+          <div class="intent-name">Technical basis</div>
+          <div class="intent-def">uses a method / tool from the cited work</div>
+          <div class="adv-arg" id="arg-TB"></div>
+          <div class="adv-strength" id="str-TB"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-CP">
+          <div class="intent-name">Comparison</div>
+          <div class="intent-def">compares results / approach against it</div>
+          <div class="adv-arg" id="arg-CP"></div>
+          <div class="adv-strength" id="str-CP"></div>
+          <div class="strike-overlay"></div>
+        </div>
+        <div class="actor advocate" id="actor-adv-FI">
+          <div class="intent-name">Fundamental idea</div>
+          <div class="intent-def">core concept that inspires the work</div>
+          <div class="adv-arg" id="arg-FI"></div>
+          <div class="adv-strength" id="str-FI"></div>
+          <div class="strike-overlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ④ Cross-Examiner -->
+    <div class="station actor examiner" id="actor-examiner">
+      <div class="step-no">04</div>
+      <div class="actor-icon">⚔</div>
+      <div class="actor-name">Cross-Examiner</div>
+      <div class="actor-engine">RULE+LLM</div>
+      <div class="actor-cap">attacks weak / unsupported arguments</div>
+      <div class="say" id="say-examiner"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑤ Fact-Checker -->
+    <div class="station actor factchecker" id="actor-factchecker">
+      <div class="step-no">05</div>
+      <div class="actor-icon">🔬</div>
+      <div class="actor-name">Fact-Checker</div>
+      <div class="actor-engine">EXACT+BLEU+NLI <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">verifies every quote against the source</div>
+      <div class="say" id="say-factchecker"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑥ Judge -->
+    <div class="station actor judge" id="actor-judge">
+      <div class="step-no">06</div>
+      <div class="actor-icon">⚖</div>
+      <div class="actor-name">Judge</div>
+      <div class="actor-engine">LLM + CAL</div>
+      <div class="actor-cap">weighs survivors, calibrates → verdict</div>
+      <div class="say" id="say-judge"></div>
+    </div>
+
+    <div class="flow-arrow">›</div>
+
+    <!-- ⑦ Clerk -->
+    <div class="station actor clerk" id="actor-clerk">
+      <div class="step-no">07</div>
+      <div class="actor-icon">📝</div>
+      <div class="actor-name">Clerk</div>
+      <div class="actor-engine">CODE <span class="badge-no-llm">no LLM</span></div>
+      <div class="actor-cap">seals the annotation artifact</div>
+      <div class="say" id="say-clerk"></div>
+    </div>
+
+  </main>
+
+  <!-- ════════ TRANSCRIPT ════════ -->
+  <aside class="transcript glass">
+    <div class="transcript-header">
+      <span class="dot"></span>
+      <span class="t-title">Live Transcript</span>
+      <span class="clock" id="clock">00:00.0</span>
+    </div>
+    <ol class="transcript-log" id="transcript-log"></ol>
+  </aside>
+
+  <!-- ════════ METERS ════════ -->
+  <section class="meters glass">
+    <div class="meter">
+      <span class="meter-label">Active engine</span>
+      <span class="meter-value" id="m-engine">—</span>
+    </div>
+    <div class="meter">
+      <span class="meter-label">Tools invoked</span>
+      <span class="meter-value" id="m-tools">0</span>
+    </div>
+    <div class="meter big">
+      <span class="meter-label">LLM calls</span>
+      <span class="meter-value glow-llm" id="m-llm">0</span>
+    </div>
+    <div class="meter big">
+      <span class="meter-label">LLM tokens</span>
+      <span class="meter-value glow-llm" id="m-tokens">0</span>
+    </div>
+    <div class="meter">
+      <span class="meter-label">Stage</span>
+      <span class="meter-value" id="m-stage">—</span>
+    </div>
+    <div class="meter wide">
+      <span class="meter-label">Final verdict</span>
+      <span class="meter-value verdict" id="m-verdict">pending…</span>
+    </div>
+  </section>
+
+  <!-- ════════ ARTIFACT DRAWER ════════ -->
+  <section class="artifact-drawer hidden" id="artifact-drawer">
+    <div class="artifact-header">
+      <span class="seal">⚖</span>
+      ANNOTATION ARTIFACT
+      <span class="seal-r">filed</span>
+    </div>
+    <pre id="artifact-json"></pre>
+  </section>
+
+  <!-- ════════ CONTROLS ════════ -->
+  <footer class="controls glass">
+    <button id="btn-play" class="ctrl primary">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 2 L10 6 L3 10 Z" fill="currentColor"/></svg>
+      Run
+    </button>
+    <button id="btn-pause" class="ctrl" disabled>
+      <svg width="10" height="10" viewBox="0 0 12 12"><rect x="3" y="2" width="2.4" height="8" fill="currentColor"/><rect x="6.6" y="2" width="2.4" height="8" fill="currentColor"/></svg>
+      Pause
+    </button>
+    <button id="btn-restart" class="ctrl">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6 a4 4 0 1 1 1.2 2.8"/><path d="M1.5 2 L1.5 4.8 L4.3 4.8" stroke-linejoin="round"/></svg>
+      Restart
+    </button>
+    <div class="speed">
+      <span class="lbl small">speed</span>
+      <button class="speed-btn" data-speed="0.5">0.5×</button>
+      <button class="speed-btn active" data-speed="1">1×</button>
+      <button class="speed-btn" data-speed="2">2×</button>
+      <button class="speed-btn" data-speed="4">4×</button>
+    </div>
+    <div class="legend">
+      <span class="legend-dot ml"></span> ML
+      <span class="legend-dot rule"></span> Rule
+      <span class="legend-dot graph"></span> Graph
+      <span class="legend-dot nli"></span> NLI
+      <span class="legend-dot llm"></span> LLM
+    </div>
+  </footer>
+
+</div>
+
+<script src="live-agent.js"></script>
+<script src="animation.js"></script>
+</body>
+</html>

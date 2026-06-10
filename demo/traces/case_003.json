@@ -1,0 +1,532 @@
+{
+  "case_id": "ID_77541",
+  "input": {
+    "paragraph": "Our proposed kernel estimator achieves a parametric rate of convergence on subsets, which is faster than the non-parametric rate reported by Yao et al. (2005) under the sparsely observed regime. In contrast to their approach, our method does not require functional principal component analysis as a preprocessing step.",
+    "cited_ref": "Yao et al. (2005)",
+    "ground_truth": "Comparison"
+  },
+  "schema": {
+    "task": "citation_intent",
+    "labels": [
+      "Background",
+      "Technical basis",
+      "Comparison",
+      "Fundamental idea"
+    ]
+  },
+  "stages": [
+    {
+      "id": "triage",
+      "name": "Triage Officer",
+      "engine": "ML",
+      "tools_called": [
+        "tfidf_lr_classifier"
+      ],
+      "duration_ms": 0.0,
+      "tokens": 0,
+      "llm_calls": 0,
+      "outputs": {
+        "difficulty": 0.5,
+        "shortlist": [
+          "Comparison",
+          "Background",
+          "Technical basis",
+          "Fundamental idea"
+        ],
+        "probs": {
+          "Background": 0.167,
+          "Technical basis": 0.167,
+          "Comparison": 0.5,
+          "Fundamental idea": 0.167
+        },
+        "fast_track": false
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "say",
+          "actor": "triage",
+          "text": "New case received: ID_77541."
+        },
+        {
+          "t": 250,
+          "type": "tool_call",
+          "tool": "tfidf_lr_classifier",
+          "engine": "ML",
+          "summary": "max_prob = 0.500"
+        },
+        {
+          "t": 700,
+          "type": "say",
+          "actor": "triage",
+          "text": "Difficulty = 0.50. Convening one advocate per intent: Comparison, Background, Technical basis, Fundamental idea."
+        },
+        {
+          "t": 1100,
+          "type": "shortlist",
+          "value": [
+            "Comparison",
+            "Background",
+            "Technical basis",
+            "Fundamental idea"
+          ],
+          "fast_track": false
+        }
+      ]
+    },
+    {
+      "id": "investigator",
+      "name": "Investigator",
+      "engine": "RULE+ML+GRAPH",
+      "tools_called": [
+        "rhetorical_marker_regex",
+        "section_classifier",
+        "co_citation_lookup"
+      ],
+      "duration_ms": 0.7,
+      "tokens": 0,
+      "llm_calls": 0,
+      "outputs": {
+        "markers": [
+          {
+            "marker": "in contrast",
+            "label": "Comparison",
+            "pos": 195
+          }
+        ],
+        "section": {
+          "section": "Methods",
+          "confidence": 0.78
+        },
+        "co_citations": []
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "say",
+          "actor": "investigator",
+          "text": "Gathering evidence; cheapest tools first."
+        },
+        {
+          "t": 350,
+          "type": "tool_call",
+          "tool": "rhetorical_marker_regex",
+          "engine": "RULE",
+          "summary": "1 marker(s) found"
+        },
+        {
+          "t": 800,
+          "type": "say",
+          "actor": "investigator",
+          "text": "Found 1 rhetorical marker(s): in contrast."
+        },
+        {
+          "t": 1250,
+          "type": "tool_call",
+          "tool": "section_classifier",
+          "engine": "ML",
+          "summary": "Methods"
+        },
+        {
+          "t": 1600,
+          "type": "say",
+          "actor": "investigator",
+          "text": "Section: Methods (conf 0.78)."
+        },
+        {
+          "t": 2000,
+          "type": "tool_call",
+          "tool": "co_citation_lookup",
+          "engine": "GRAPH",
+          "summary": "0 co-citation(s)"
+        },
+        {
+          "t": 2400,
+          "type": "say",
+          "actor": "investigator",
+          "text": "Case file complete — 1 markers, section=Methods, 0 co-cites."
+        }
+      ]
+    },
+    {
+      "id": "panel",
+      "name": "Prosecution Panel",
+      "engine": "LLM",
+      "tools_called": [
+        "llm_advocate[Comparison]",
+        "llm_advocate[Background]",
+        "llm_advocate[Technical basis]",
+        "llm_advocate[Fundamental idea]"
+      ],
+      "duration_ms": 0.0,
+      "tokens": 560,
+      "llm_calls": 4,
+      "outputs": {
+        "advocates": [
+          {
+            "label": "Comparison",
+            "argument": "I argue Comparison: 1 marker(s) found (in contrast); paragraph is from Methods.",
+            "evidence_spans": [
+              {
+                "span": "ly observed regime. In contrast to their approach, our method",
+                "marker": "in contrast"
+              },
+              {
+                "span": "the authors directly outperform the cited method on benchmarks",
+                "marker": "(fabricated)"
+              }
+            ],
+            "raw_strength": 1.0
+          },
+          {
+            "label": "Background",
+            "argument": "I argue Background, though direct surface evidence is thin.",
+            "evidence_spans": [],
+            "raw_strength": 0.0
+          },
+          {
+            "label": "Technical basis",
+            "argument": "I argue Technical basis, though direct surface evidence is thin.",
+            "evidence_spans": [],
+            "raw_strength": 0.6
+          },
+          {
+            "label": "Fundamental idea",
+            "argument": "I argue Fundamental idea, though direct surface evidence is thin.",
+            "evidence_spans": [],
+            "raw_strength": 0.0
+          }
+        ]
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "advocate_speak",
+          "label": "Comparison",
+          "text": "I argue Comparison: 1 marker(s) found (in contrast); paragraph is from Methods.",
+          "strength": 1.0
+        },
+        {
+          "t": 100,
+          "type": "tool_call",
+          "tool": "llm_advocate[Comparison]",
+          "engine": "LLM",
+          "summary": "strength=1.0"
+        },
+        {
+          "t": 1800,
+          "type": "advocate_speak",
+          "label": "Background",
+          "text": "I argue Background, though direct surface evidence is thin.",
+          "strength": 0.0
+        },
+        {
+          "t": 1900,
+          "type": "tool_call",
+          "tool": "llm_advocate[Background]",
+          "engine": "LLM",
+          "summary": "strength=0.0"
+        },
+        {
+          "t": 3600,
+          "type": "advocate_speak",
+          "label": "Technical basis",
+          "text": "I argue Technical basis, though direct surface evidence is thin.",
+          "strength": 0.6
+        },
+        {
+          "t": 3700,
+          "type": "tool_call",
+          "tool": "llm_advocate[Technical basis]",
+          "engine": "LLM",
+          "summary": "strength=0.6"
+        },
+        {
+          "t": 5400,
+          "type": "advocate_speak",
+          "label": "Fundamental idea",
+          "text": "I argue Fundamental idea, though direct surface evidence is thin.",
+          "strength": 0.0
+        },
+        {
+          "t": 5500,
+          "type": "tool_call",
+          "tool": "llm_advocate[Fundamental idea]",
+          "engine": "LLM",
+          "summary": "strength=0.0"
+        }
+      ]
+    },
+    {
+      "id": "examiner",
+      "name": "Cross-Examiner",
+      "engine": "RULE+LLM",
+      "tools_called": [
+        "contradiction_pattern",
+        "llm_critic"
+      ],
+      "duration_ms": 0.0,
+      "tokens": 80,
+      "llm_calls": 1,
+      "outputs": {
+        "attacks": [
+          {
+            "label": "Background",
+            "attack": "Counter: only a single weak marker; not enough signal.",
+            "flag": "weak"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "attack",
+          "label": "Background",
+          "text": "Counter: only a single weak marker; not enough signal.",
+          "flag": "weak"
+        }
+      ]
+    },
+    {
+      "id": "fact_checker",
+      "name": "Fact-Checker",
+      "engine": "RULE+NLI",
+      "tools_called": [
+        "exact_span_match",
+        "bleu_overlap"
+      ],
+      "duration_ms": 0.1,
+      "tokens": 0,
+      "llm_calls": 0,
+      "outputs": {
+        "verifications": [
+          {
+            "label": "Comparison",
+            "span": "ly observed regime. In contrast to their approach, our method",
+            "exact_match": true,
+            "bleu": 0.9,
+            "verified": true
+          },
+          {
+            "label": "Comparison",
+            "span": "the authors directly outperform the cited method on benchmarks",
+            "exact_match": false,
+            "bleu": 0.38,
+            "verified": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "verify",
+          "label": "Comparison",
+          "span": "ly observed regime. In contrast to their approach, our method",
+          "verified": true,
+          "exact": true,
+          "bleu": 0.9
+        },
+        {
+          "t": 420,
+          "type": "verify",
+          "label": "Comparison",
+          "span": "the authors directly outperform the cited method on benchmarks",
+          "verified": false,
+          "exact": false,
+          "bleu": 0.38
+        }
+      ]
+    },
+    {
+      "id": "judge",
+      "name": "Judge",
+      "engine": "LLM+CAL",
+      "tools_called": [
+        "llm_arbitrator",
+        "platt_calibrator"
+      ],
+      "duration_ms": 0.0,
+      "tokens": 100,
+      "llm_calls": 1,
+      "outputs": {
+        "label": "Comparison",
+        "confidence": 0.629,
+        "margin": 0.446,
+        "scores": {
+          "Comparison": 2.0,
+          "Background": 0.02,
+          "Technical basis": 0.767,
+          "Fundamental idea": 0.167
+        },
+        "probs": {
+          "Comparison": 0.629,
+          "Background": 0.087,
+          "Technical basis": 0.183,
+          "Fundamental idea": 0.101
+        },
+        "abstain": false
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "say",
+          "actor": "judge",
+          "text": "Weighing arguments and verified evidence."
+        },
+        {
+          "t": 700,
+          "type": "scores",
+          "scores": {
+            "Comparison": 2.0,
+            "Background": 0.02,
+            "Technical basis": 0.767,
+            "Fundamental idea": 0.167
+          },
+          "probs": {
+            "Comparison": 0.629,
+            "Background": 0.087,
+            "Technical basis": 0.183,
+            "Fundamental idea": 0.101
+          }
+        },
+        {
+          "t": 1400,
+          "type": "verdict",
+          "label": "Comparison",
+          "confidence": 0.629,
+          "margin": 0.446,
+          "abstain": false
+        },
+        {
+          "t": 1700,
+          "type": "say",
+          "actor": "judge",
+          "text": "Verdict: Comparison  ·  conf 0.63  ·  margin 0.45"
+        }
+      ]
+    },
+    {
+      "id": "clerk",
+      "name": "Clerk",
+      "engine": "CODE",
+      "tools_called": [],
+      "duration_ms": 0.0,
+      "tokens": 0,
+      "llm_calls": 0,
+      "outputs": {
+        "artifact": {
+          "case_id": "ID_77541",
+          "label": "Comparison",
+          "confidence": 0.629,
+          "margin": 0.446,
+          "abstain": false,
+          "evidence": [
+            {
+              "span": "ly observed regime. In contrast to their approach, our method",
+              "verified": true,
+              "method": "exact"
+            }
+          ],
+          "rejected_alternatives": [
+            {
+              "label": "Background",
+              "reason": "Counter: only a single weak marker; not enough signal."
+            },
+            {
+              "label": "Technical basis",
+              "reason": "lower posterior than winner (0.18)"
+            },
+            {
+              "label": "Fundamental idea",
+              "reason": "lower posterior than winner (0.10)"
+            }
+          ],
+          "ground_truth": "Comparison"
+        }
+      },
+      "actions": [
+        {
+          "t": 0,
+          "type": "say",
+          "actor": "clerk",
+          "text": "Sealing the case file."
+        },
+        {
+          "t": 500,
+          "type": "show_artifact",
+          "artifact": {
+            "case_id": "ID_77541",
+            "label": "Comparison",
+            "confidence": 0.629,
+            "margin": 0.446,
+            "abstain": false,
+            "evidence": [
+              {
+                "span": "ly observed regime. In contrast to their approach, our method",
+                "verified": true,
+                "method": "exact"
+              }
+            ],
+            "rejected_alternatives": [
+              {
+                "label": "Background",
+                "reason": "Counter: only a single weak marker; not enough signal."
+              },
+              {
+                "label": "Technical basis",
+                "reason": "lower posterior than winner (0.18)"
+              },
+              {
+                "label": "Fundamental idea",
+                "reason": "lower posterior than winner (0.10)"
+              }
+            ],
+            "ground_truth": "Comparison"
+          }
+        },
+        {
+          "t": 1300,
+          "type": "say",
+          "actor": "clerk",
+          "text": "Annotation artifact filed."
+        }
+      ]
+    }
+  ],
+  "final_artifact": {
+    "case_id": "ID_77541",
+    "label": "Comparison",
+    "confidence": 0.629,
+    "margin": 0.446,
+    "abstain": false,
+    "evidence": [
+      {
+        "span": "ly observed regime. In contrast to their approach, our method",
+        "verified": true,
+        "method": "exact"
+      }
+    ],
+    "rejected_alternatives": [
+      {
+        "label": "Background",
+        "reason": "Counter: only a single weak marker; not enough signal."
+      },
+      {
+        "label": "Technical basis",
+        "reason": "lower posterior than winner (0.18)"
+      },
+      {
+        "label": "Fundamental idea",
+        "reason": "lower posterior than winner (0.10)"
+      }
+    ],
+    "ground_truth": "Comparison"
+  },
+  "summary": {
+    "total_duration_ms": 0.8,
+    "total_tokens": 740,
+    "tools_invoked": 14,
+    "llm_calls": 6,
+    "ground_truth_match": true
+  }
+}
