@@ -2,8 +2,7 @@
 
 > **From a paragraph and a cited reference — to a calibrated citation-intent label, with every quoted claim verified against the source and every rejected alternative explained.**
 
-<!-- Replace the placeholder links below with your actual URLs -->
-[🌐 Playground](http://localhost:8000) · [📄 Architecture diagram](./architecture.svg) · [🎬 Demo video script](./video/script.md)
+[🌐 Playground](http://8.141.116.119:7868) · [📄 Architecture diagram](./architecture.svg) · [🎬 Demo video](https://youtu.be/EBAGmQXdnfo)
 
 ---
 
@@ -146,7 +145,7 @@ docker build -t citent .
 docker run -p 8000:8000 -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY citent
 ```
 
-**Playground UI** — open `http://localhost:8000`. Three sample cases ship built-in; pick one, optionally switch provider in Settings, click Run. The animation walks through every stage with a live LLM-calls / token counter.
+**Playground UI** — open `http://localhost:8000` for a local deploy, or use the live deployment at <http://8.141.116.119:7868>. Three sample cases ship built-in; pick one, optionally switch provider in Settings, click Run. The animation walks through every stage with a live LLM-calls / token counter.
 
 **Offline fallback** — if you cannot run Python, `juror_demo_standalone.html` is a single self-contained file (~130 KB) that runs the demo trace in any browser. Live mode in this fallback calls LLM providers directly from the browser using a user-pasted key.
 
@@ -229,7 +228,6 @@ citent/
 │   └── traces/case_*.json        pre-recorded sample runs
 │
 ├── prototype/juror.py            Python prototype (stdlib only, no API keys)
-├── video/script.md               AI-video shooting script
 ├── architecture.svg              system diagram
 ├── juror_demo_standalone.html    single-file playground (static-only mode)
 ├── bundle.py                     regenerates the standalone HTML
@@ -286,9 +284,10 @@ A complete integration test that exercises every stage end-to-end against the bu
 
 ## Further reading
 
+- [🌐 Live playground](http://8.141.116.119:7868) — try it without installing anything
+- [🎬 Demo video](https://youtu.be/EBAGmQXdnfo) — the full pipeline in 1.5 minutes
 - [Architecture diagram](./architecture.svg) — seven-stage pipeline, role responsibilities, engine partition
 - [Deployment guide](./DEPLOYMENT.md) — server-real vs static-only modes, Docker, CSP, troubleshooting
 - [Award C submission narrative](./AWARD_C_SUBMISSION.md) — STAI-X 2026 framing
-- [Video script](./video/script.md) — AI-rendered demo cinematics
 - [Demo README](./demo/README.md) — frontend layer specifics
 - [Server README](./server/README.md) — backend internals
