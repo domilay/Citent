@@ -99,24 +99,65 @@
     </div>
   </section>
 
+  <!-- ════════ INTRO ════════ -->
+  <section class="demo-intro glass">
+    <p>Classify <strong>citation intent</strong> — why a paper cites another work — via JUROR's seven-agent pipeline.
+       Pick a <strong>built-in case</strong> or <strong>Custom</strong> to paste your own paragraph and reference,
+       then click <strong>Run</strong>. <strong>Demo</strong> replays a scripted trace; switch to <strong>Live</strong> (Settings) for real LLM calls.</p>
+  </section>
+
   <!-- ════════ CASE BAR ════════ -->
   <section class="casebar glass">
     <div class="case-info">
+      <div id="case-error"></div>
       <div class="case-meta">
         <span class="lbl">CASE</span>
         <span id="case-id" class="val">—</span>
         <span class="lbl">REF</span>
-        <span id="case-ref" class="val ref">—</span>
+        <input type="text" id="case-ref-input" class="case-ref-input" placeholder="e.g. Hardle (1989)">
         <span class="lbl">GROUND&nbsp;TRUTH</span>
         <span id="case-gt" class="val gt">—</span>
+        <div class="case-selector">
+          <span class="lbl small">built-in case</span>
+          <button class="case-btn active" data-case="1">01</button>
+          <button class="case-btn" data-case="2">02</button>
+          <button class="case-btn" data-case="3">03</button>
+          <span class="lbl small">custom case</span>
+          <button class="case-btn custom" data-case="custom">Custom</button>
+        </div>
       </div>
-      <p id="case-paragraph" class="case-paragraph">—</p>
+      <textarea id="case-paragraph-input" class="case-paragraph-input" rows="3"
+        placeholder="Paste or type the paragraph to annotate…"></textarea>
     </div>
-    <div class="case-selector">
-      <span class="lbl small">case</span>
-      <button class="case-btn active" data-case="1">01</button>
-      <button class="case-btn" data-case="2">02</button>
-      <button class="case-btn" data-case="3">03</button>
+  </section>
+
+  <!-- ════════ CONTROLS ════════ -->
+  <section class="controls glass">
+    <button id="btn-play" class="ctrl primary">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 2 L10 6 L3 10 Z" fill="currentColor"/></svg>
+      Run
+    </button>
+    <button id="btn-pause" class="ctrl" disabled>
+      <svg width="10" height="10" viewBox="0 0 12 12"><rect x="3" y="2" width="2.4" height="8" fill="currentColor"/><rect x="6.6" y="2" width="2.4" height="8" fill="currentColor"/></svg>
+      Pause
+    </button>
+    <button id="btn-restart" class="ctrl">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6 a4 4 0 1 1 1.2 2.8"/><path d="M1.5 2 L1.5 4.8 L4.3 4.8" stroke-linejoin="round"/></svg>
+      Restart
+    </button>
+    <div class="speed">
+      <span class="lbl small">speed</span>
+      <button class="speed-btn" data-speed="0.5">0.5×</button>
+      <button class="speed-btn active" data-speed="1">1×</button>
+      <button class="speed-btn" data-speed="2">2×</button>
+      <button class="speed-btn" data-speed="4">4×</button>
+    </div>
+    <div class="legend">
+      <span class="legend-dot ml"></span> ML
+      <span class="legend-dot rule"></span> Rule
+      <span class="legend-dot graph"></span> Graph
+      <span class="legend-dot nli"></span> NLI
+      <span class="legend-dot llm"></span> LLM
     </div>
   </section>
 
@@ -282,36 +323,6 @@
     </div>
     <pre id="artifact-json"></pre>
   </section>
-
-  <!-- ════════ CONTROLS ════════ -->
-  <footer class="controls glass">
-    <button id="btn-play" class="ctrl primary">
-      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 2 L10 6 L3 10 Z" fill="currentColor"/></svg>
-      Run
-    </button>
-    <button id="btn-pause" class="ctrl" disabled>
-      <svg width="10" height="10" viewBox="0 0 12 12"><rect x="3" y="2" width="2.4" height="8" fill="currentColor"/><rect x="6.6" y="2" width="2.4" height="8" fill="currentColor"/></svg>
-      Pause
-    </button>
-    <button id="btn-restart" class="ctrl">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6 a4 4 0 1 1 1.2 2.8"/><path d="M1.5 2 L1.5 4.8 L4.3 4.8" stroke-linejoin="round"/></svg>
-      Restart
-    </button>
-    <div class="speed">
-      <span class="lbl small">speed</span>
-      <button class="speed-btn" data-speed="0.5">0.5×</button>
-      <button class="speed-btn active" data-speed="1">1×</button>
-      <button class="speed-btn" data-speed="2">2×</button>
-      <button class="speed-btn" data-speed="4">4×</button>
-    </div>
-    <div class="legend">
-      <span class="legend-dot ml"></span> ML
-      <span class="legend-dot rule"></span> Rule
-      <span class="legend-dot graph"></span> Graph
-      <span class="legend-dot nli"></span> NLI
-      <span class="legend-dot llm"></span> LLM
-    </div>
-  </footer>
 
 </div>
 

@@ -66,7 +66,7 @@ window.JUROR_LIVE = (function () {
     },
 
     google: {
-      defaultModel: 'gemini-3.1-pro',
+      defaultModel: 'gemini-3.5-flash',
       keyHint:      'AIza…',
       endpoint:     null,   // computed per request because key goes in URL
       buildBody:    (sys, user, model, max_tokens) => ({

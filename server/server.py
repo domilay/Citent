@@ -28,6 +28,8 @@ import logging
 import pathlib
 from typing import Optional, Dict
 
+from dotenv import load_dotenv
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -51,6 +53,8 @@ from tools import get_triage, get_nli  # noqa: E402
 
 HERE     = pathlib.Path(__file__).parent.resolve()
 DEMO_DIR = (HERE.parent / "demo").resolve()
+
+load_dotenv(HERE / ".env")
 
 
 # ───────────────────────────────────────────────────────────────────
@@ -133,6 +137,7 @@ class CaseInput(BaseModel):
 class RunCaseRequest(BaseModel):
     case: CaseInput
     provider: str = "anthropic"
+    model: Optional[str] = None
 
 
 # ───────────────────────────────────────────────────────────────────
@@ -196,7 +201,8 @@ async def api_run_case(req: RunCaseRequest):
             f"Set the {DEFAULTS[req.provider][0]} environment variable.",
         )
     try:
-        trace = await run_case(req.case.model_dump(), provider=req.provider)
+        trace = await run_case(req.case.model_dump(), provider=req.provider,
+                               model=req.model)
         return JSONResponse(trace)
     except Exception as e:                   # pragma: no cover
         log.exception("run-case failed")

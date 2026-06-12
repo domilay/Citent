@@ -307,11 +307,26 @@ html, body {
 .status-dot.error   { background: #FB7185; color: #FB7185; }
 
 /* ═══════════════════════════════════════════════════════════════
+   INTRO
+   ═══════════════════════════════════════════════════════════════ */
+.demo-intro {
+  padding: 14px 22px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.demo-intro p { margin: 0; }
+.demo-intro strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    CASE BAR
    ═══════════════════════════════════════════════════════════════ */
-.casebar { display: flex; gap: 22px; padding: 20px 26px; }
-.case-info { flex: 1; min-width: 0; }
-.case-meta { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; margin-bottom: 11px; }
+.casebar { padding: 20px 26px; }
+.case-info { min-width: 0; }
+.case-meta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 11px; }
 .lbl {
   font-size: 11.5px;
   color: var(--text-faint);
@@ -327,21 +342,63 @@ html, body {
 }
 .val.ref { color: #FDE047; }
 .val.gt  { color: #4ADE80; font-weight: 600; }
-.case-paragraph {
+.case-ref-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  color: #FDE047;
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  min-width: 160px;
+  transition: border-color 0.15s var(--ease);
+}
+.case-ref-input:focus {
+  border-color: rgba(167,139,250,0.5);
+}
+.case-paragraph-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
   color: var(--text-dim);
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.65;
-  font-style: italic;
+  padding: 10px 12px;
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  min-height: 72px;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
-.case-selector { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.case-paragraph-input:focus {
+  border-color: rgba(167,139,250,0.5);
+  background: rgba(167,139,250,0.04);
+  color: var(--text);
+}
+.case-paragraph-input::placeholder { color: var(--text-faint); font-style: italic; }
+.case-selector {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-left: 4px;
+}
+.case-selector .lbl.small {
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.case-selector .lbl.small:not(:first-child) {
+  margin-left: 10px;
+}
 .case-btn {
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--glass-border);
   color: var(--text);
-  width: 56px; height: 36px;
-  border-radius: 8px;
+  width: 40px; height: 32px;
+  border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13.5px; font-weight: 600;
+  font-size: 12.5px; font-weight: 600;
   cursor: pointer;
   transition: all 0.18s var(--ease);
 }
@@ -351,6 +408,12 @@ html, body {
   background: rgba(167,139,250,0.12);
   border-color: rgba(167,139,250,0.45);
   box-shadow: 0 0 12px -2px rgba(167,139,250,0.35);
+}
+.case-btn.custom {
+  width: auto;
+  padding: 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
 }
 
 /* ═══════════════════════════════════════════════════════════════
