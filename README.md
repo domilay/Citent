@@ -2,7 +2,18 @@
 
 > **From a paragraph and a cited reference — to a calibrated citation-intent label, with every quoted claim verified against the source and every rejected alternative explained.**
 
-[🌐 Playground](http://8.141.116.119:7868) · [📄 Architecture diagram](./architecture.svg) · [🎬 Demo video](https://youtu.be/EBAGmQXdnfo)
+[🌐 Playground](http://8.141.116.119:7868) · [📄 Architecture diagram](./architecture.svg) · [▶ Watch on YouTube](https://youtu.be/EBAGmQXdnfo)
+
+<p align="center">
+  <video src="./media/demo.mp4"
+         controls
+         muted
+         preload="metadata"
+         width="760"
+         poster="https://img.youtube.com/vi/EBAGmQXdnfo/maxresdefault.jpg">
+    Your browser does not support inline video — <a href="https://youtu.be/EBAGmQXdnfo">watch on YouTube</a>.
+  </video>
+</p>
 
 ---
 
