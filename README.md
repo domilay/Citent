@@ -5,12 +5,13 @@
 [🌐 Playground](http://8.141.116.119:7868) · [📄 Architecture diagram](./architecture.svg) · [▶ Watch on YouTube](https://youtu.be/EBAGmQXdnfo)
 
 <p align="center">
-  <video src="./media/demo.mp4"
-         controls
-         muted
-         preload="metadata"
-         width="760"
-         poster="https://img.youtube.com/vi/EBAGmQXdnfo/maxresdefault.jpg">
+  <video
+    controls
+    muted
+    preload="metadata"
+    width="760"
+    poster="https://img.youtube.com/vi/EBAGmQXdnfo/maxresdefault.jpg">
+    <source src="https://cdn.jsdelivr.net/gh/domilay/Citent@main/media/demo.mp4" type="video/mp4">
     Your browser does not support inline video — <a href="https://youtu.be/EBAGmQXdnfo">watch on YouTube</a>.
   </video>
 </p>
