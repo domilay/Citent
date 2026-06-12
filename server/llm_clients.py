@@ -11,7 +11,7 @@ Environment variables read at startup:
 
     ANTHROPIC_API_KEY   |  ANTHROPIC_MODEL    (default claude-opus-4-6)
     OPENAI_API_KEY      |  OPENAI_MODEL       (default gpt-5.4)
-    GOOGLE_API_KEY      |  GOOGLE_MODEL       (default gemini-3.1-pro)
+    GOOGLE_API_KEY      |  GOOGLE_MODEL       (default gemini-3.5-flash)
     DEEPSEEK_API_KEY    |  DEEPSEEK_MODEL     (default deepseek-chat)
 
 If a provider key is missing, the client raises a clean RuntimeError so the
@@ -34,17 +34,17 @@ REQUEST_TIMEOUT = 60.0
 DEFAULTS = {
     "anthropic": ("ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "claude-opus-4-6"),
     "openai":    ("OPENAI_API_KEY",    "OPENAI_MODEL",    "gpt-5.4"),
-    "google":    ("GOOGLE_API_KEY",    "GOOGLE_MODEL",    "gemini-3.1-pro"),
+    "google":    ("GOOGLE_API_KEY",    "GOOGLE_MODEL",    "gemini-3.5-flash"),
     "deepseek":  ("DEEPSEEK_API_KEY",  "DEEPSEEK_MODEL",  "deepseek-chat"),
 }
 
 
-def _resolve(provider: str) -> Tuple[str, str]:
+def _resolve(provider: str, model_override: Optional[str] = None) -> Tuple[str, str]:
     if provider not in DEFAULTS:
         raise ValueError(f"unknown provider: {provider}")
     key_env, model_env, default_model = DEFAULTS[provider]
     key   = os.environ.get(key_env, "").strip()
-    model = os.environ.get(model_env, default_model).strip() or default_model
+    model = (model_override or "").strip() or os.environ.get(model_env, default_model).strip() or default_model
     if not key:
         raise RuntimeError(
             f"Provider '{provider}' has no key set. "
@@ -53,8 +53,9 @@ def _resolve(provider: str) -> Tuple[str, str]:
     return key, model
 
 
-async def call_anthropic(system: str, user: str, max_tokens: int) -> Tuple[str, int]:
-    key, model = _resolve("anthropic")
+async def call_anthropic(system: str, user: str, max_tokens: int,
+                         model: Optional[str] = None) -> Tuple[str, int]:
+    key, model = _resolve("anthropic", model)
     body = {
         "model": model,
         "max_tokens": max_tokens,
@@ -78,8 +79,9 @@ async def call_anthropic(system: str, user: str, max_tokens: int) -> Tuple[str, 
     return text, tokens
 
 
-async def call_openai(system: str, user: str, max_tokens: int) -> Tuple[str, int]:
-    key, model = _resolve("openai")
+async def call_openai(system: str, user: str, max_tokens: int,
+                      model: Optional[str] = None) -> Tuple[str, int]:
+    key, model = _resolve("openai", model)
     body = {
         "model": model,
         "max_tokens": max_tokens,
@@ -100,8 +102,9 @@ async def call_openai(system: str, user: str, max_tokens: int) -> Tuple[str, int
     return text, tokens
 
 
-async def call_google(system: str, user: str, max_tokens: int) -> Tuple[str, int]:
-    key, model = _resolve("google")
+async def call_google(system: str, user: str, max_tokens: int,
+                      model: Optional[str] = None) -> Tuple[str, int]:
+    key, model = _resolve("google", model)
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/{model}"
            f":generateContent?key={key}")
     body = {
@@ -123,8 +126,9 @@ async def call_google(system: str, user: str, max_tokens: int) -> Tuple[str, int
     return text, tokens
 
 
-async def call_deepseek(system: str, user: str, max_tokens: int) -> Tuple[str, int]:
-    key, model = _resolve("deepseek")
+async def call_deepseek(system: str, user: str, max_tokens: int,
+                        model: Optional[str] = None) -> Tuple[str, int]:
+    key, model = _resolve("deepseek", model)
     body = {
         "model": model,
         "max_tokens": max_tokens,
@@ -162,8 +166,8 @@ def available_providers() -> dict:
 
 
 async def call(provider: str, system: str, user: str,
-               max_tokens: int = 220) -> Tuple[str, int]:
+               max_tokens: int = 220, model: Optional[str] = None) -> Tuple[str, int]:
     """Dispatch to the right provider client."""
     if provider not in PROVIDERS:
         raise ValueError(f"unknown provider: {provider}")
-    return await PROVIDERS[provider](system, user, max_tokens)
+    return await PROVIDERS[provider](system, user, max_tokens, model)

@@ -127,10 +127,12 @@ class JurorPlayer {
   }
 
   bindCaseInfo() {
-    document.getElementById('case-id').textContent       = this.trace.case_id;
-    document.getElementById('case-ref').textContent      = this.trace.input.cited_ref;
-    document.getElementById('case-gt').textContent       = this.trace.input.ground_truth || '—';
-    document.getElementById('case-paragraph').textContent= '"' + this.trace.input.paragraph + '"';
+    document.getElementById('case-id').textContent        = this.trace.case_id;
+    document.getElementById('case-ref-input').value       = this.trace.input.cited_ref;
+    document.getElementById('case-gt').textContent        = this.trace.input.ground_truth || '—';
+    document.getElementById('case-paragraph-input').value = this.trace.input.paragraph;
+    const err = document.getElementById('case-error');
+    if (err) err.innerHTML = '';
   }
 
   flatten() {
@@ -530,8 +532,8 @@ class JurorPlayer {
   }
 
   showError(html) {
-    const para = document.getElementById('case-paragraph');
-    para.innerHTML = `<div class="error-banner">${html}</div>`;
+    const err = document.getElementById('case-error');
+    if (err) err.innerHTML = `<div class="error-banner">${html}</div>`;
   }
 }
 
@@ -543,12 +545,18 @@ const liveState = {
   provider:       'anthropic',
   apiKey:         '',
   model:          '',
+  urlPreset:      null,            // e.g. 'google' from ?preset=google
   // Server-real mode wires the UI to a FastAPI backend that runs the agent
   // with real trained models (LR triage, NLI fact-checker).  Detected at
   // boot by GET-ing /api/status on the same origin.
   serverReady:    false,
   serverStatus:   null,             // last /api/status payload
   preferServer:   true,             // user can disable to force in-browser mode
+};
+
+// URL presets: ?preset=google → server-side Google + gemini-3.5-flash
+const URL_PRESETS = {
+  google: { provider: 'google', model: 'gemini-3.5-flash' },
 };
 
 // Built-in sample inputs (in case the user wants Live without an existing trace)
@@ -602,7 +610,7 @@ function applyMode(mode) {
   document.querySelectorAll('.mode-opt').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  if (mode === 'live' && !liveState.apiKey) {
+  if (mode === 'live' && !liveState.apiKey && !liveState.urlPreset) {
     document.getElementById('api-drawer').classList.add('open');
   }
 }
@@ -623,6 +631,28 @@ async function probeServer() {
   }
 }
 
+function applyUrlPreset(presetName) {
+  const preset = URL_PRESETS[presetName];
+  if (!preset) return false;
+
+  liveState.urlPreset  = presetName;
+  liveState.provider   = preset.provider;
+  liveState.model      = preset.model;
+  liveState.preferServer = true;
+
+  document.querySelectorAll('.prov-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.provider === preset.provider);
+  });
+  const modelInput = document.getElementById('api-model-input');
+  if (modelInput) {
+    modelInput.placeholder = preset.model;
+    modelInput.value       = preset.model;
+  }
+
+  applyMode('live');
+  return true;
+}
+
 function describeServerStatus(j) {
   if (!j) return 'Server not detected · running in-browser mode.';
   const trAcc   = j.triage?.metrics?.accuracy;
@@ -639,11 +669,13 @@ function describeServerStatus(j) {
   return `${trMsg} · ${nliMsg} · ${provMsg}`;
 }
 
-async function runViaServer(caseInput, providerName) {
+async function runViaServer(caseInput, providerName, modelName) {
+  const payload = { case: caseInput, provider: providerName };
+  if (modelName) payload.model = modelName;
   const resp = await fetch('/api/run-case', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ case: caseInput, provider: providerName }),
+    body: JSON.stringify(payload),
   });
   if (!resp.ok) {
     const body = await resp.text();
@@ -652,8 +684,46 @@ async function runViaServer(caseInput, providerName) {
   return await resp.json();
 }
 
-async function runLiveCase(caseNum) {
-  const caseInput = LIVE_CASES[caseNum];
+function getCaseInputFromUI() {
+  const paragraph = document.getElementById('case-paragraph-input').value.trim();
+  const ref = document.getElementById('case-ref-input').value.trim();
+  const caseId = document.getElementById('case-id').textContent;
+  const gt = document.getElementById('case-gt').textContent;
+  return {
+    case_id: caseId === '—' ? 'CUSTOM' : caseId,
+    paragraph,
+    ref_clean_citation: ref,
+    ground_truth: gt === '—' ? null : gt,
+  };
+}
+
+function fillCaseFields(c) {
+  document.getElementById('case-id').textContent = c.case_id;
+  document.getElementById('case-ref-input').value = c.ref_clean_citation;
+  document.getElementById('case-gt').textContent = c.ground_truth || '—';
+  document.getElementById('case-paragraph-input').value = c.paragraph;
+  const err = document.getElementById('case-error');
+  if (err) err.innerHTML = '';
+}
+
+function selectCustomCase() {
+  player.pause();
+  player.reset();
+  player.trace = null;
+  document.getElementById('case-id').textContent = 'CUSTOM';
+  document.getElementById('case-ref-input').value = '';
+  document.getElementById('case-gt').textContent = '—';
+  document.getElementById('case-paragraph-input').value = '';
+  const err = document.getElementById('case-error');
+  if (err) err.innerHTML = '';
+  document.getElementById('case-paragraph-input').focus();
+}
+
+async function runLiveCase(caseInput) {
+  if (!caseInput.paragraph || !caseInput.ref_clean_citation) {
+    setApiStatus('error', 'Enter a paragraph and cited reference before running.');
+    return;
+  }
   player.pause(); player.reset();
   document.getElementById('btn-play').disabled = true;
 
@@ -667,10 +737,12 @@ async function runLiveCase(caseNum) {
       document.getElementById('btn-play').disabled = false;
       return;
     }
+    const model = liveState.model || null;
+    const modelHint = model ? ` / ${model}` : '';
     setApiStatus('ok',
-      `Server mode · calling ${provider} on the backend (real TF-IDF + NLI + LLM)…`);
+      `Server mode · calling ${provider}${modelHint} on the backend (real TF-IDF + NLI + LLM)…`);
     try {
-      const trace = await runViaServer(caseInput, provider);
+      const trace = await runViaServer(caseInput, provider, model);
       setApiStatus('ok',
         `Server run complete · ${trace.summary.llm_calls} LLM calls · ${trace.summary.total_tokens} tokens.`);
       player.trace = trace;
@@ -732,23 +804,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   // If yes — Live mode prefers the server (real TF-IDF + NLI + LLM).
   // If no  — Live mode falls back to in-browser direct calls.
   const status = await probeServer();
+
+  const urlPreset = new URLSearchParams(window.location.search).get('preset');
+  const presetApplied = urlPreset && applyUrlPreset(urlPreset);
+
   if (status && status.triage?.ready) {
-    setApiStatus('ok', describeServerStatus(status));
-    // Toggle the Live label to make it clear this isn't a stub
     const liveBtn = document.querySelector('.mode-opt[data-mode="live"]');
     if (liveBtn) liveBtn.innerHTML =
       '<span class="mode-dot live-dot"></span> Live <span class="badge-no-llm" style="margin-left:6px">server</span>';
+
+    if (presetApplied) {
+      const provOk = status.llm_providers?.[liveState.provider];
+      if (provOk) {
+        setApiStatus('ok',
+          `Preset "${urlPreset}" · server ${liveState.provider} / ${liveState.model} ready. Click Run.`);
+      } else {
+        setApiStatus('error',
+          `Preset "${urlPreset}" needs ${liveState.provider.toUpperCase()}_API_KEY on the server.`);
+      }
+    } else {
+      setApiStatus('ok', describeServerStatus(status));
+    }
   } else {
-    setApiStatus('pending',
-      'No backend detected on this origin. Live mode will run in-browser using the key you paste below.');
+    if (presetApplied) {
+      setApiStatus('error',
+        `Preset "${urlPreset}" requires the backend server — start uvicorn in server/.`);
+    } else {
+      setApiStatus('pending',
+        'No backend detected on this origin. Live mode will run in-browser using the key you paste below.');
+    }
   }
 
   // ─── Play / Pause / Restart ───
   document.getElementById('btn-play').addEventListener('click', () => {
     if (liveState.mode === 'live') {
-      const active = document.querySelector('.case-btn.active');
-      const n = parseInt(active?.dataset?.case || '1');
-      runLiveCase(n);
+      runLiveCase(getCaseInputFromUI());
     } else {
       player.play();
     }
@@ -772,16 +862,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.addEventListener('click', async () => {
       document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      if (btn.dataset.case === 'custom') {
+        selectCustomCase();
+        return;
+      }
       if (liveState.mode === 'demo') {
         await player.loadCase(parseInt(btn.dataset.case));
       } else {
-        // bind case info without playing — Run triggers the live call
         const c = LIVE_CASES[parseInt(btn.dataset.case)];
         player.reset();
         player.trace = { case_id: c.case_id,
                          input: { paragraph: c.paragraph, cited_ref: c.ref_clean_citation,
                                   ground_truth: c.ground_truth } };
-        player.bindCaseInfo();
+        fillCaseFields(c);
       }
     });
   });
@@ -836,7 +929,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ─── Keyboard shortcuts ───
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === ' ' || e.key === 'k') {
       e.preventDefault();
       if (liveState.mode === 'live') {

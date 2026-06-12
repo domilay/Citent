@@ -133,7 +133,8 @@ def _softmax(scores: Dict[str, float]) -> Dict[str, float]:
 # ───────────────────────────────────────────────────────────────────
 #  Main entry
 # ───────────────────────────────────────────────────────────────────
-async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
+async def run_case(case_input: Dict, provider: str = "anthropic",
+                   model: Optional[str] = None) -> Dict:
     """Run the full agent for one case.
 
     Args:
@@ -143,6 +144,7 @@ async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
             - ref_clean_citation (str)
             - ground_truth (str | None, optional)
         provider: which LLM provider to call ("anthropic" | "openai" | "google" | "deepseek")
+        model: optional model override (falls back to provider env default)
     """
 
     paragraph = case_input["paragraph"]
@@ -232,7 +234,7 @@ async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
         user_msg = _panel_user(label, INTENT_DEFINITIONS[label], paragraph, ref)
         try:
             argument, tokens = await llm_clients.call(
-                provider, sys_msg, user_msg, max_tokens=100)
+                provider, sys_msg, user_msg, max_tokens=100, model=model)
             argument = argument.strip() or f"I argue {label}."
         except Exception as e:
             argument = f"I argue {label}. (LLM call failed: {str(e)[:80]})"
@@ -308,7 +310,7 @@ async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
                 + "\n\nReturn a numbered rebuttal list, one short sentence each."
             )
             text_resp, examiner_tokens = await llm_clients.call(
-                provider, CRITIC_SYS, critic_user, max_tokens=220)
+                provider, CRITIC_SYS, critic_user, max_tokens=220, model=model)
             lines = [l for l in (text_resp or "").splitlines() if l.strip().startswith(tuple("0123456789"))]
             for i, a in enumerate(attacks):
                 if i < len(lines):
@@ -427,7 +429,7 @@ async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
             + "\n\nReturn the verdict JSON."
         )
         text_resp, judge_tokens = await llm_clients.call(
-            provider, JUDGE_SYS, judge_user, max_tokens=180)
+            provider, JUDGE_SYS, judge_user, max_tokens=180, model=model)
         llm_verdict, llm_reason = _parse_judge_verdict(text_resp or "",
                                                       list(probs.keys()))
     except Exception as e:
@@ -502,6 +504,7 @@ async def run_case(case_input: Dict, provider: str = "anthropic") -> Dict:
             "fact_checker": "cross-encoder/nli-deberta-v3-small"
                             if get_nli().available else "BLEU only",
             "llm_provider": provider,
+            "llm_model":    model or "env-default",
         },
     }
     trace["stages"].append({

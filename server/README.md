@@ -35,7 +35,7 @@ export DEEPSEEK_API_KEY="sk-..."
 # optional model overrides
 export ANTHROPIC_MODEL="claude-opus-4-6"
 export OPENAI_MODEL="gpt-5.4"
-export GOOGLE_MODEL="gemini-3.1-pro"
+export GOOGLE_MODEL="gemini-3.5-flash"
 export DEEPSEEK_MODEL="deepseek-chat"
 
 # optional NLI override
